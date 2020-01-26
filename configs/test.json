@@ -1,0 +1,23 @@
+{
+ "imu": "test",
+ "motors": "test",
+ "frequency": 526,
+ "control": "test",
+ "pid_roll": {
+  "P": 4,
+  "I": 2,
+  "D": 2
+ },
+"pid_pitch": {
+  "P": 10,
+  "I": 2,
+  "D": 1
+ },
+ "pid_yaw": {
+  "P": 0,
+  "I": 0,
+  "D": 0
+ },
+ "save_flag": false,
+ "csv_flag": false
+}
