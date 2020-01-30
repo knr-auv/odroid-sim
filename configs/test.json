@@ -1,5 +1,6 @@
 {
- "imu": "test",
+ "mode": "normal",
+ "pos": "hardware",
  "motors": "test",
  "frequency": 526,
  "control": "test",

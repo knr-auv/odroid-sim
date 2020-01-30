@@ -28,7 +28,7 @@ class PIDThread(threading.Thread):
 
         self.integrator = Integrator()
         global motors_speed_diff_pid, motors_speed_pad
-        self.IMU = None
+        self.position_sensor = None
         self.roll_diff, self.pitch_diff, self.yaw_diff, self.velocity_diff = 0, 0, 0, 0
 
         max_sum_output = 900.
@@ -42,9 +42,9 @@ class PIDThread(threading.Thread):
     def run(self):
         while True:
             with self.lock:
-                self.roll_diff = self.roll_PID.update(self.IMU.get_sample('roll'))
-                self.pitch_diff = self.pitch_PID.update(self.IMU.get_sample('pitch'))
-                self.yaw_diff = self.yaw_PID.update(self.IMU.get_sample('yaw'))  # maybe try:  'gyro_raw_x' 'gro_proc_x'
+                self.roll_diff = self.roll_PID.update(self.position_sensor.get_sample('roll'))
+                self.pitch_diff = self.pitch_PID.update(self.position_sensor.get_sample('pitch'))
+                self.yaw_diff = self.yaw_PID.update(self.position_sensor.get_sample('yaw'))  # maybe try:  'gyro_raw_x' 'gro_proc_x'
 
                 # self.velocity_diff = self.velocity_PID.update(self.IMU.get_sample('vel_x'))
 
@@ -105,8 +105,8 @@ class PIDThread(threading.Thread):
         # print(motors_speed_diff_pid)
         self.pid_motors_speeds_update = [0] * 5
 
-    def getIMU(self):
-        return self.IMU
+    def get_position_sensor(self):
+        return self.position_sensor
 
-    def setIMU(self, imu):
-        self.IMU = imu
+    def set_position_sensor(self, pos):
+        self.position_sensor = pos

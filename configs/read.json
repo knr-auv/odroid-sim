@@ -1,5 +1,6 @@
 {
- "imu": "UM7",
+ "mode": "normal",
+ "pos": "hardware",
  "motors": "AdaFruit",
  "frequency": 526,
  "control": "read",

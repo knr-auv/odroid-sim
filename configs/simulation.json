@@ -1,7 +1,7 @@
 {
- "mode": "normal",
- "pos": "hardware",
- "motors": "AdaFruit",
+ "mode": "simulation",
+ "pos": "simulation",
+ "motors": "test",
  "frequency": 526,
  "control": "ui",
  "pid_roll": {

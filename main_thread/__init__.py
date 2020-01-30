@@ -1,3 +1,3 @@
 from .MotorControlTh import MotorsControlThread
-from .IMUTh import IMUThread
+from .PosTh import POSThread
 from .PIDTh import PIDThread
