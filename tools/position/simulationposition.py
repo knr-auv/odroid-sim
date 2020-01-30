@@ -3,7 +3,7 @@ from tools.position.position import Position
 
 class SimulationPosition(Position):
     def __init__(self, config):
-        super().__init__(config)
+        Position.__init__(config)
         self.client = config.get_client()
         self.samples = None
 
