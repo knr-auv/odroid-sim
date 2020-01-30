@@ -5,7 +5,7 @@ from .motorcontroller import MotorController
 class AdafruitController(MotorController):
 
 	def __init__(self, config):
-		super().__init__(config)
+		MotorController.__init__(config)
 
 		import Adafruit_PCA9685
 		self._set_frequency(config.get("frequency"))
@@ -39,6 +39,10 @@ class AdafruitController(MotorController):
 		duty = self._map_speed(speed)
 		#print(duty / 4095 * 1000. / self.frequency)
 		self.pwm.set_pwm(motor_num, 0, int(duty))
+
+	def _run_motors(self, motors_speed):
+		for i in range(5):
+			self._run_motor(i, motors_speed[i])
 
 	def stop_all(self):
 		for i in range(5):

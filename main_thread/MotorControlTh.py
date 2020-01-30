@@ -29,14 +29,16 @@ class MotorsControlThread(threading.Thread):
                 #print(motors_speed)    # comment
 
                 #os.system('clear')
-                for i in range(5):
-                    motors_speed[i] += motors_speed_diff_pid[i]
+                #for i in range(5):
+                #    motors_speed[i] += motors_speed_diff_pid[i]
                     #if (i ==0  or i ==1) and run_flag:
                     #    motors_speed[i] += RUN_FORWARD_VALUE  # previous version of "run" command execution - test new and del this
-                    motors_speed_diff_pid[i] = 0
-                    self.motors.run_motor(i, motors_speed[i])
+                    # motors_speed_diff_pid[i] = 0
+                    #self.motors.run_motor(i, motors_speed[i])
                     #print("silnik {}, wypelnienie {}".format(i, motors_speed[i]))
-                    motors_speed[i] = 0    # uncomment
+                    #motors_speed[i] = 0    # uncomment
                     #print("{}:{}".format(motors_names[i], motors_speed[i]), end=" ")    # comment
                 #print(motors_speed)
+                motors_speed[:] = motors_speed_diff_pid[:]
+                self.motors.run_motors(motors_speed)
             time.sleep(0.2)    # comment
