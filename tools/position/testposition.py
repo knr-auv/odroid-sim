@@ -3,7 +3,7 @@ from tools.position.position import Position
 
 class TestPosition(Position):
     def __init__(self, config):
-        super().__init__(config)
+        Position.__init__(self, config)
 
     def _catch_samples(self):
         pass

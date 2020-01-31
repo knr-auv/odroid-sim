@@ -3,6 +3,7 @@
 class Position(object):
 
     def __init__(self, config):
+        self.config = config
         pass
 
     def catch_samples(self):

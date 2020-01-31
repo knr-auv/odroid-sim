@@ -23,16 +23,16 @@ class SimulationClient:
 
     def set_motors(self, motors_data):
         if len(motors_data) == 5:
-            self.motors_data["FL"] = motors_data[0]
-            self.motors_data["FR"] = motors_data[1]
-            self.motors_data["ML"] = motors_data[2]
-            self.motors_data["MR"] = motors_data[3]
-            self.motors_data["B"] = motors_data[4]
+            self.motors_data["FL"] = -motors_data[4]/1000
+            self.motors_data["FR"] = -motors_data[2]/1000
+            self.motors_data["ML"] = motors_data[0]/1000
+            self.motors_data["MR"] = motors_data[1]/1000
+            self.motors_data["B"] = -motors_data[3]/1000
             serialized = json.dumps(self.motors_data).encode('ascii')
             lenght = pack('<I', len(serialized))
             self.socket.send(b"\xA0"+lenght)
             self.socket.sendall(serialized)
-            print("send")
+            print(serialized)
 
     def get_pos(self):
         self.data = b""
@@ -41,8 +41,8 @@ class SimulationClient:
         confirm = self.socket.recv(1)
         #print(confirm)
         if not(confirm == b"\xC2"):
-            return None
             logging.debug("Message error")
+            return None
         lenght = self.socket.recv(4)
         lenght = unpack('<I', lenght)[0]
         #print(lenght)

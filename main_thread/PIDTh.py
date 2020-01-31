@@ -55,8 +55,7 @@ class PIDThread(threading.Thread):
                 self.roll_control()
                 self.pitch_control()
                 self.yaw_control()
-                if PAD_STEERING_FLAG or READ_FLAG:
-                    self.pad_control()
+                self.pad_control()
                 self.center_x_control()
                 # self.velocity_control()
                 self.update_motors()

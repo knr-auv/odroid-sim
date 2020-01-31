@@ -2,7 +2,7 @@ import json
 from .simulationclient.simulationclient import SimulationClient
 
 
-class Config(object):
+class Config:
 
     def __init__(self):
         self.data = None

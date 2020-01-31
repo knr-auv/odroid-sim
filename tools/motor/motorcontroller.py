@@ -22,7 +22,6 @@ class MotorController:
         pass
 
     def run_motors(self, motors_speed):
-        if len(motors_speed)==5:
             self._run_motors(motors_speed)
 
     def _run_motors(self, motors_speed):

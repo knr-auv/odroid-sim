@@ -14,7 +14,7 @@ class POSThread(threading.Thread):
         c = 0
         while True:
             self.position_sensor.catch_samples()
-            print (self.position_sensor.get_sample("roll"))
+            # print (self.position_sensor.get_sample("roll"))
             # self.connObj.setDataFrame(self.IMU.get_sample())
             # self.IMU.printSamples(c % 50 == 0)
             c += 1

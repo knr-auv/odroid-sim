@@ -1,9 +1,9 @@
 {
  "mode": "simulation",
  "pos": "simulation",
- "motors": "test",
+ "motors": "simulation",
  "frequency": 526,
- "control": "ui",
+ "control": "key",
  "pid_roll": {
   "P": 4,
   "I": 2,

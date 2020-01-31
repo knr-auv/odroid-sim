@@ -12,7 +12,7 @@ IP_ADDRESS_1 = '192.168.137.208'  # address odroid
 
 PAD_PORT = 8186
 
-RUN_FORWARD_VALUE = 400.
+RUN_FORWARD_VALUE = 0
 
 # horizontal left / right, vertical left/mid/right
 motors_names = ['hl', 'hr', 'vl', 'vm', 'vr']   # should be connected in this order to pwm outputs 0, 1, 2,...
@@ -29,4 +29,4 @@ motors_speed_pad = [0, 0, 0, 0, 0]
 # roll, pitch, yaw angles
 RPY_angles = [0, 0, 0]
 
-run_flag = True
+run_flag = False

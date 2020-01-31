@@ -5,7 +5,7 @@ from .motorcontroller import MotorController
 class AdafruitController(MotorController):
 
 	def __init__(self, config):
-		MotorController.__init__(config)
+		MotorController.__init__(self, config)
 
 		import Adafruit_PCA9685
 		self._set_frequency(config.get("frequency"))
