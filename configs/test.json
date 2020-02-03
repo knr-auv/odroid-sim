@@ -1,6 +1,6 @@
 {
  "mode": "normal",
- "pos": "hardware",
+ "pos": "test",
  "motors": "test",
  "frequency": 526,
  "control": "test",

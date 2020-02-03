@@ -1,7 +1,9 @@
 import threading
 import time
 from tools.PID import PID
+from tools.motor import get_motor_controller
 from tools.Integrator import Integrator
+from tools.printer.printer import Printer
 from variable import motors_speed_diff_pid, motors_speed_pad, PAD_STEERING_FLAG, READ_FLAG, RUN_FORWARD_VALUE
 
 
@@ -14,7 +16,7 @@ class PIDThread(threading.Thread):
     depth - not used yet because of lack of depth feedback in AUV
     velocity - not used because of lack of velocity feedback in AUV"""
 
-    def __init__(self):
+    def __init__(self, config):
         threading.Thread.__init__(self)
         self.lock = threading.Lock()
         self.roll_PID = PID()
@@ -27,7 +29,8 @@ class PIDThread(threading.Thread):
         self.center_x_diff = 0
 
         self.integrator = Integrator()
-        global motors_speed_diff_pid, motors_speed_pad
+        # global motors_speed_diff_pid, motors_speed_pad
+        global motors_speed_pad
         self.position_sensor = None
         self.roll_diff, self.pitch_diff, self.yaw_diff, self.velocity_diff = 0, 0, 0, 0
 
@@ -39,12 +42,21 @@ class PIDThread(threading.Thread):
 
         self.pid_motors_speeds_update = [0, 0, 0, 0, 0]
 
+        self.motors = get_motor_controller(config)
+        self.motors.initialize_all()
+
+        self.printer = Printer()
+
     def run(self):
+        now = time.time()
         while True:
             with self.lock:
-                self.roll_diff = self.roll_PID.update(self.position_sensor.get_sample('roll'))
-                self.pitch_diff = self.pitch_PID.update(self.position_sensor.get_sample('pitch'))
-                self.yaw_diff = self.yaw_PID.update(self.position_sensor.get_sample('yaw'))  # maybe try:  'gyro_raw_x' 'gro_proc_x'
+                roll = self.position_sensor.get_sample('roll')
+                pitch = self.position_sensor.get_sample('pitch')
+                yaw = self.position_sensor.get_sample('yaw')
+                self.roll_diff = self.roll_PID.update(roll)
+                self.pitch_diff = self.pitch_PID.update(pitch)
+                self.yaw_diff = self.yaw_PID.update(yaw)  # maybe try:  'gyro_raw_x' 'gro_proc_x'
 
                 # self.velocity_diff = self.velocity_PID.update(self.IMU.get_sample('vel_x'))
 
@@ -57,9 +69,16 @@ class PIDThread(threading.Thread):
                 self.yaw_control()
                 self.pad_control()
                 self.center_x_control()
-                # self.velocity_control()
-                self.update_motors()
-                time.sleep(0.2)
+
+                self.printer.set_roll(roll)
+                self.printer.set_pitch(pitch)
+                self.printer.set_yaw(yaw)
+            # self.velocity_control()
+            self.update_motors()
+            self.printer.print_out()
+            print(time.time() - now)
+            now = time.time()
+            time.sleep(0.1)
 
     def roll_control(self):
         self.pid_motors_speeds_update[4] -= self.roll_diff
@@ -99,7 +118,9 @@ class PIDThread(threading.Thread):
     # turned on
     def update_motors(self):
         # print(self.pid_motors_speeds_update)
-        motors_speed_diff_pid[:] = self.pid_motors_speeds_update[:]
+        motors = self.motors.run_motors(self.pid_motors_speeds_update)
+        self.printer.set_motors_value(motors)
+        # motors_speed_diff_pid[:] = self.pid_motors_speeds_update[:]
         # print('Po przypisaniu:')
         # print(motors_speed_diff_pid)
         self.pid_motors_speeds_update = [0] * 5

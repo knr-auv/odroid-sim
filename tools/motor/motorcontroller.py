@@ -22,7 +22,8 @@ class MotorController:
         pass
 
     def run_motors(self, motors_speed):
-            self._run_motors(motors_speed)
+        self._run_motors(motors_speed)
+        return motors_speed
 
     def _run_motors(self, motors_speed):
         pass
