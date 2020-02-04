@@ -16,8 +16,14 @@ class SimulationPosition(Position):
         if self.samples is None:
             return 0
         if sample == "roll":
-            return self.samples['rot']['x']
-        elif sample == "pitch":
-            return self.samples['rot']['y']
-        elif sample == "yaw":
+            if self.samples['rot']['y'] > 180:
+                return -360 + self.samples['rot']['y']
             return self.samples['rot']['z']
+        elif sample == "pitch":
+            if self.samples['rot']['x'] > 180:
+                return 360-self.samples['rot']['x']
+            return -self.samples['rot']['x']
+        elif sample == "yaw":
+            return self.samples['rot']['y']
+        elif sample == "depth":
+            return  -self.samples['pos']['y']

@@ -23,6 +23,7 @@ class PIDThread(threading.Thread):
         self.pitch_PID = PID()
         self.yaw_PID = PID()
         self.velocity_PID = PID()
+        self.depth_PID = PID()
         # TODO: depth_PID object and things related to it
 
         self.center_x_PID = PID()
@@ -32,13 +33,14 @@ class PIDThread(threading.Thread):
         # global motors_speed_diff_pid, motors_speed_pad
         global motors_speed_pad
         self.position_sensor = None
-        self.roll_diff, self.pitch_diff, self.yaw_diff, self.velocity_diff = 0, 0, 0, 0
+        self.roll_diff, self.pitch_diff, self.yaw_diff, self.velocity_diff, self.depth_diff = 0, 0, 0, 0, 0
 
         max_sum_output = 900.
         self.roll_PID.setMaxOutput(max_sum_output / 4)
         self.pitch_PID.setMaxOutput(max_sum_output / 4)
         self.yaw_PID.setMaxOutput(max_sum_output / 4)
         self.velocity_PID.setMaxOutput(max_sum_output / 4)
+        self.depth_PID.setMaxOutput(max_sum_output / 4)
 
         self.pid_motors_speeds_update = [0, 0, 0, 0, 0]
 
@@ -48,16 +50,19 @@ class PIDThread(threading.Thread):
         self.printer = Printer()
 
     def run(self):
-        now = time.time()
         while True:
             with self.lock:
+                self.position_sensor.catch_samples()
                 roll = self.position_sensor.get_sample('roll')
                 pitch = self.position_sensor.get_sample('pitch')
                 yaw = self.position_sensor.get_sample('yaw')
+                depth = self.position_sensor.get_sample('depth')
+                print("{} {} {}".format(roll, pitch, depth))
+                #print(depth)
                 self.roll_diff = self.roll_PID.update(roll)
                 self.pitch_diff = self.pitch_PID.update(pitch)
                 self.yaw_diff = self.yaw_PID.update(yaw)  # maybe try:  'gyro_raw_x' 'gro_proc_x'
-
+                self.depth_diff = self.depth_PID.update(depth)
                 # self.velocity_diff = self.velocity_PID.update(self.IMU.get_sample('vel_x'))
 
                 # prints for testing reasons
@@ -69,6 +74,7 @@ class PIDThread(threading.Thread):
                 self.yaw_control()
                 self.pad_control()
                 self.center_x_control()
+                self.depth_control()
 
                 self.printer.set_roll(roll)
                 self.printer.set_pitch(pitch)
@@ -76,8 +82,6 @@ class PIDThread(threading.Thread):
             # self.velocity_control()
             self.update_motors()
             self.printer.print_out()
-            print(time.time() - now)
-            now = time.time()
             time.sleep(0.1)
 
     def roll_control(self):
@@ -113,6 +117,11 @@ class PIDThread(threading.Thread):
         self.pid_motors_speeds_update[0] -= self.center_x_diff
         self.pid_motors_speeds_update[1] += self.center_x_diff
 
+    def depth_control(self):
+        self.pid_motors_speeds_update[2] += 5 * self.depth_diff
+        self.pid_motors_speeds_update[3] += 5 * self.depth_diff
+        self.pid_motors_speeds_update[4] += 5 * self.depth_diff
+
     # method that updates motors velocity
     # you can pass velocity to pid_motors_speeds_update in cose to set the velocity on motors without PID controller
     # turned on
@@ -120,6 +129,7 @@ class PIDThread(threading.Thread):
         # print(self.pid_motors_speeds_update)
         motors = self.motors.run_motors(self.pid_motors_speeds_update)
         self.printer.set_motors_value(motors)
+        # print(motors)
         # motors_speed_diff_pid[:] = self.pid_motors_speeds_update[:]
         # print('Po przypisaniu:')
         # print(motors_speed_diff_pid)

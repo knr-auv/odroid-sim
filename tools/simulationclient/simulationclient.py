@@ -15,7 +15,7 @@ class SimulationClient:
         logging.debug("Socket connect port:{}".format(port))
         self.socket.connect((self.ip, self.port))
         logging.debug("Socket now Connect with port:{}".format(port))
-        self.motors_data = {"FL":0.1,"FR":-1.0,"ML":0.1,"MR":0.0,"B":0.008}
+        self.motors_data = {"FL":0.0,"FR":0.0,"ML":0.0,"MR":0.0,"B":0.0}
         self.data =  b""
 
     def __del__(self):
@@ -32,7 +32,7 @@ class SimulationClient:
             lenght = pack('<I', len(serialized))
             self.socket.send(b"\xA0"+lenght)
             self.socket.sendall(serialized)
-            print(serialized)
+            #print(serialized)
 
     def get_pos(self):
         self.data = b""

@@ -19,13 +19,13 @@ if __name__ == '__main__':
     position_sensor = get_pos(config)
 
     # motors_control_thread = MotorsControlThread(config)
-    pos_thread = POSThread(position_sensor)
+    # pos_thread = POSThread(position_sensor)
     pid_thread = PIDThread(config)
     pid_thread.set_position_sensor(position_sensor)
     control_thread = get_control(pid_thread, config)
 
 
     # motors_control_thread.start()
-    pos_thread.start()
+    # pos_thread.start()
     pid_thread.start()
     control_thread.start()

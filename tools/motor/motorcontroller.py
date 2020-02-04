@@ -22,7 +22,13 @@ class MotorController:
         pass
 
     def run_motors(self, motors_speed):
-        self._run_motors(motors_speed)
+        if len(motors_speed) == 5:
+            for i in range(5):
+                if motors_speed[i] > self.max_speed:
+                    motors_speed[i] = self.max_speed
+                elif motors_speed[i] < self.min_speed:
+                    motors_speed[i] = self.min_speed
+            self._run_motors(motors_speed)
         return motors_speed
 
     def _run_motors(self, motors_speed):
