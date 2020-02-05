@@ -7,7 +7,7 @@ import json
 
 class SimulationClient:
     """Klasa Tworzy clienta do odbierania ramek zdjec z symulacji"""
-    def __init__(self, port=44210, ip='localhost'):
+    def __init__(self, port=44210, ip='10.42.0.42'):
         """Inicjalizacja socekta """
         self.port = port
         self.ip = ip

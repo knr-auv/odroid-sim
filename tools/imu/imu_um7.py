@@ -5,6 +5,7 @@ from tools.Integrator import Integrator
 import numpy as np
 import math
 from .imu import IMU
+import um7
 
 IP_ADDRESS = '192.168.137.45'
 FILTER_VALUE = 0.2  # value for low frequency filter used for debugging drift
@@ -15,7 +16,6 @@ class UM7IMU(IMU):
     This class is kind of runnable class ( like in java ) - can be used as target for Thread object"""
     def __init__(self, config):
         super(UM7IMU, self).__init__()
-        import um7
         self.gyro_integrator = Integrator()
         self.acc_integrator = Integrator()
         self.vel_integrator = Integrator()
@@ -63,34 +63,34 @@ class UM7IMU(IMU):
 
         self.sv = ['roll', 'pitch', 'yaw']
 
-        self.prev_sample = 0
-        self.drift = 0
-        self.gravity_vector = (0, 0, 0)
-        # init
-        time.sleep(1)
-        self.catchSamples()
-        angles = self.makeAnglesDict(self.getSample('roll'), self.getSample('pitch'), self.getSample('yaw'))
-        vec = self.makeVector(self.getSample('accel_proc_x'), self.getSample('accel_proc_y'),
-                              self.getSample('accel_proc_z'))
-        self.gravity_vector = self.rotate(angles, vec, True)
+        # self.prev_sample = 0
+        # self.drift = 0
+        # self.gravity_vector = (0, 0, 0)
+        # # init
+        # time.sleep(1)
+        # self.catchSamples()
+        # angles = self.makeAnglesDict(self.getSample('roll'), self.getSample('pitch'), self.getSample('yaw'))
+        # vec = self.makeVector(self.getSample('accel_proc_x'), self.getSample('accel_proc_y'),
+        #                       self.getSample('accel_proc_z'))
+        # self.gravity_vector = self.rotate(angles, vec, True)
 
-    # x = 0
-    # y = 0
-    # z = 0
-    # for i in range(50):
-    #	self.catchSamples()
-    #	xs ``	'= self.getSample('accel_proc_x')
-    #	ys = self.getSample('accel_proc_y')
-    #	zs = self.getSample('accel_proc_z')
+        # x = 0
+        # y = 0
+        # z = 0
+        # for i in range(50):
+        #	self.catchSamples()
+        #	xs ``	'= self.getSample('accel_proc_x')
+        #	ys = self.getSample('accel_proc_y')
+        #	zs = self.getSample('accel_proc_z')
 
-    #	x+=xs
-    #	y+=ys
-    #	z+=zs
-    #	time.sleep(0.05)
+        #	x+=xs
+        #	y+=ys
+        #	z+=zs
+        #	time.sleep(0.05)
 
-    # self.gravity = np.sqrt(np.power(x/50,2)+np.power(y/50,2)+np.power(z/50,2))
-    # print('GRAVITY:  ', self.gravity)
-    # self.prev_sample = 0
+        # self.gravity = np.sqrt(np.power(x/50,2)+np.power(y/50,2)+np.power(z/50,2))
+        # print('GRAVITY:  ', self.gravity)
+        # self.prev_sample = 0
 
     def _catch_samples(self):
         self.s1.catchallsamples(self.sv, 1.0)
@@ -101,7 +101,7 @@ class UM7IMU(IMU):
         for state in self.statevars:
             samples[state] = self.getSample(state)
 
-        samples['vel_x'] = self.getSample('vel_x')  # just for now
+        # samples['vel_x'] = self.getSample('vel_x')  # just for now
         return samples
 
     # method that returns validated and precalculated IMU's state valueas
@@ -110,13 +110,13 @@ class UM7IMU(IMU):
             state = self.s1.state[sample]
             return self.correctAngles(state)
         elif ( sample == 'roll'):
-           state = self.s1.state[sample]
-           state = self.correctAngles(state)
-           if state>0:
-               state-=180
-           else:
-               state+=180
-           return state
+            state = self.s1.state[sample]
+            state = self.correctAngles(state)
+            # if state>0:
+            #     state-=180
+            # else:
+            #     state+=180
+            return state
         elif sample == 'yaw':
             state = self.s1.state[sample]
             #state = self.getSample('gyro_raw_z')
