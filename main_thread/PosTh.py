@@ -1,4 +1,5 @@
 import threading
+import time
 
 
 class POSThread(threading.Thread):
@@ -13,7 +14,9 @@ class POSThread(threading.Thread):
         # will start printing samples (maybe we could run it in another terminal)
         c = 0
         while True:
-            self.position_sensor.catch_samples()
+            with self.lock:
+                self.position_sensor.catch_samples()
+            time.sleep(0.2)
             # print (self.position_sensor.get_sample("roll"))
             # self.connObj.setDataFrame(self.IMU.get_sample())
             # self.IMU.printSamples(c % 50 == 0)

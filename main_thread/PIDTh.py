@@ -4,6 +4,7 @@ from tools.PID import PID
 from tools.motor import get_motor_controller
 from tools.Integrator import Integrator
 from tools.printer.printer import Printer
+from tools.plotter.plotter import Plotter
 from variable import motors_speed_diff_pid, motors_speed_pad, PAD_STEERING_FLAG, READ_FLAG, RUN_FORWARD_VALUE
 
 
@@ -48,40 +49,45 @@ class PIDThread(threading.Thread):
         self.motors.initialize_all()
 
         self.printer = Printer()
+        self.plotter = Plotter()
 
     def run(self):
+        now = time.time()
         while True:
-            with self.lock:
-                self.position_sensor.catch_samples()
-                roll = self.position_sensor.get_sample('roll')
-                pitch = self.position_sensor.get_sample('pitch')
-                yaw = self.position_sensor.get_sample('yaw')
-                depth = self.position_sensor.get_sample('depth')
-                print("{} {} {}".format(roll, pitch, depth))
-                #print(depth)
-                self.roll_diff = self.roll_PID.update(roll)
-                self.pitch_diff = self.pitch_PID.update(pitch)
-                self.yaw_diff = self.yaw_PID.update(yaw)  # maybe try:  'gyro_raw_x' 'gro_proc_x'
-                self.depth_diff = self.depth_PID.update(depth)
-                # self.velocity_diff = self.velocity_PID.update(self.IMU.get_sample('vel_x'))
+            self.position_sensor.catch_samples()
+            roll = self.position_sensor.get_sample('roll')
+            pitch = self.position_sensor.get_sample('pitch')
+            yaw = self.position_sensor.get_sample('yaw')
+            depth = self.position_sensor.get_sample('depth')
+            print("{} {} {}".format(roll, pitch, depth))
+            self.plotter.plot(depth)
+            #print(depth)
+            self.roll_diff = self.roll_PID.update(roll)
+            self.pitch_diff = self.pitch_PID.update(pitch)
+            self.yaw_diff = self.yaw_PID.update(yaw)  # maybe try:  'gyro_raw_x' 'gro_proc_x'
+            self.depth_diff = self.depth_PID.update(depth)
+            # self.velocity_diff = self.velocity_PID.update(self.IMU.get_sample('vel_x'))
 
-                # prints for testing reasons
-                # print(self.roll_diff)
-                # print(self.pitch_diff)
-                # print(self.yaw_diff)
-                self.roll_control()
-                self.pitch_control()
-                self.yaw_control()
-                self.pad_control()
-                self.center_x_control()
-                self.depth_control()
+            # prints for testing reasons
+            # print(self.roll_diff)
+            # print(self.pitch_diff)
+            # print(self.yaw_diff)
+            self.roll_control()
+            self.pitch_control()
+            self.yaw_control()
+            self.pad_control()
+            self.center_x_control()
+            self.depth_control()
 
-                self.printer.set_roll(roll)
-                self.printer.set_pitch(pitch)
-                self.printer.set_yaw(yaw)
+            self.printer.set_roll(roll)
+            self.printer.set_pitch(pitch)
+            self.printer.set_yaw(yaw)
             # self.velocity_control()
+
             self.update_motors()
             self.printer.print_out()
+            # print(time.time()-now)
+            now = time.time()
             time.sleep(0.1)
 
     def roll_control(self):
