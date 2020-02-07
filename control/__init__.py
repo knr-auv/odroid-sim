@@ -3,6 +3,7 @@ from .readpad.ReadTh import ReadSteeringThread
 from .ui.UiTh import UIThread
 from .test.test import TestThread
 from .key.KeyTh import KeySteeringThread
+from .autonomy.autonomy import Autonomy
 
 
 controls = {
@@ -10,7 +11,8 @@ controls = {
     "read": ReadSteeringThread,
     "ui": UIThread,
     "test": TestThread,
-    "key": KeySteeringThread
+    "key": KeySteeringThread,
+    "autonomy": Autonomy
 }
 
 
