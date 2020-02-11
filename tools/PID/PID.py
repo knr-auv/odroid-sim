@@ -9,6 +9,8 @@ class PID:
         self.Ki = I
         self.Kd = D
 
+        self.memory = [self.Kp, self.Ki, self.Kd]
+
         self.set_point = set_point
 
         self.sample_time = sample_time
@@ -103,3 +105,15 @@ class PID:
 
     def getSetPoint(self):
         return self.set_point
+
+    def turn_off(self):
+        self.Kp = 0
+        self.Ki = 0
+        self.Kd = 0
+        self.memory = [self.Kp, self.Ki, self.Kd]
+
+    def turn_on(self):
+        self.Kp = self.memory[0]
+        self.Ki = self.memory[1]
+        self.Kd = self.memory[2]
+

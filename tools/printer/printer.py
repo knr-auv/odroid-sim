@@ -11,11 +11,11 @@ class Printer:
 
     def print_out(self):
         with open("output.log", "w") as output:
-            output.write("L:{}\t{}:P\n\nL:{}\t{}:P\n\n____{}____".format(self.motors_value[0],
+            output.write("L:{}\t{}:P\n\nL:{}\t{}:P\n\n____{}____".format(self.motors_value[2],
+                                                                         self.motors_value[4],
+                                                                         self.motors_value[0],
                                                                          self.motors_value[1],
-                                                                         self.motors_value[2],
-                                                                         self.motors_value[3],
-                                                                         self.motors_value[4]))
+                                                                         self.motors_value[3]))
             output.write("\nroll:{}".format(self.roll_value))
             output.write("\npitch:{}".format(self.pitch_value))
             output.write("\nyaw:{}".format(self.yaw_value))
