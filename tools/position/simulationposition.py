@@ -31,6 +31,10 @@ class SimulationPosition(Position):
                 return -360 - self.samples['gyro']['x']
             return -self.samples['gyro']['x']
         elif sample == "yaw":
+            if self.samples['gyro']['y'] > 180:
+                return -360 + self.samples['gyro']['y']
+            elif self.samples['gyro']['y'] < -180:
+                return 360 + self.samples['gyro']['y']
             return self.samples['gyro']['y']
         elif sample == "depth":
             return  self.samples["baro"]["pressure"]/9800

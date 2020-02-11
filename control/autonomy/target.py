@@ -11,7 +11,7 @@ class Target:
         self.max_time = 1000  # Maksymalny czas bez wykrycia celu
         self.obstacle = []  # Lista przeszkód widzianych przez kamere
         self.obstacle_to_avoid = []
-        self.position = []
+        self.position = [0, 0]
         self.distance = []
         self.last_seen_position = []
         self.last_seen_distance = []
