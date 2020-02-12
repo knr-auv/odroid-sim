@@ -89,6 +89,7 @@ class PIDThread(threading.Thread):
             self.printer.print_out()
             # print(time.time()-now)
             now = time.time()
+            print(self.center_x_diff)
             time.sleep(0.1)
 
     def roll_control(self):
@@ -117,8 +118,8 @@ class PIDThread(threading.Thread):
         self.pid_motors_speeds_update[1] -= self.velocity_diff
 
     def center_x_control(self):
-        self.pid_motors_speeds_update[0] -= self.center_x_diff
-        self.pid_motors_speeds_update[1] += self.center_x_diff
+        self.pid_motors_speeds_update[0] += self.center_x_diff
+        self.pid_motors_speeds_update[1] -= self.center_x_diff
 
     def depth_control(self):
         self.pid_motors_speeds_update[2] += 5 * self.depth_diff

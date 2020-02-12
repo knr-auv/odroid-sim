@@ -55,12 +55,31 @@ class Autonomy(threading.Thread):
         catch_detections_thread = threading.Thread(target=self.catch_detections)
         catch_detections_thread.start()
 
-        time.sleep(10)
+        time.sleep(15)
 
         #rozpoczecie dzialania autonomii
-        self.look_for_detections()
+        while True:
+            # SZUKANIE POZYCJI
+            print("START")
+            while True:
+                print("ROZGLADANIE")
+                flag = self.look_for_target()
+                # if flag:
+                #     break
+                print("ZMINAN POZYCJI")
+                flag = self.change_position()
+                if flag:
+                    break
 
+            print("ZNALEZIONO")
+            lost_flag = self.follow_object(200)
 
+            if not lost_flag:
+                self.target.change_target()
+            else:
+                break
+
+        print("KONIEC")
 
     def catch_detections(self):
         # lapanie ramek danych i wpisywanie ich w pola, ktorych bedziemy uzywac do sterowania
@@ -74,39 +93,68 @@ class Autonomy(threading.Thread):
                 # if self.target.get_flag():
                 #     print("MAM")
 
-    def look_for_detections(self):
+    def change_position(self):
+        self.forward(200)
+        if self.wait_and_check(3.):
+            return True
+        self.stop()
+        if self.wait_and_check(3.):
+            return True
+
+        return False
+
+    def look_for_target(self):
 
         # jezeli widzi juz cel
-        if self.target.get_flag():
-            self.follow_object(200)
+        # if self.target.get_flag():
+        #     return True
+        #
+        # self.stop()
+        # if self.wait_and_check(1.):
+        #     return True
 
-        self.stop()
-        self.wait_and_check(2.) #czeka 2s
+        for i in range(5):
+            self.turning_left(-10.)  # 10 deg/sec
+            time.sleep(0.5)
+            # flag = self.wait_and_check(0.5)
+            # if flag:
+            #     return True
+        for i in range(10):
+            self.turning_right(-10.)  # 10 deg/sec
+            # flag = self.wait_and_check(0.5)
+            time.sleep(0.5)
+            # if flag:
+            #     return True
 
-        print("ZACZYNA SZUKAC")
+        for i in range(5):
+            self.turning_left(-10.)  # 10 deg/sec
+            # flag = self.wait_and_check(0.5)
+            time.sleep(0.5)
+            # if flag:
+            #     return True
 
-        while not(self.target.get_flag()): #and (time.time() - self.target.last_time) < self.max_searching_time:
-            yaw = self.position_sensor.get_sample('yaw')
-            # max angle w stopniach -> zakres 'rozgladania sie' lodzi
-            if (yaw > - SEARCH_MAX_ANGLE_ABS and yaw < 0) or (yaw > SEARCH_MAX_ANGLE_ABS):
-                self.turning_left(-10.)  # 10 deg/sec
-                self.wait_and_check(0.5)
-            elif (yaw > 0 and yaw < SEARCH_MAX_ANGLE_ABS) or (yaw < - SEARCH_MAX_ANGLE_ABS):
-                self.turning_right(-10.)  # 10 deg/sec
-                self.wait_and_check(0.5)
+        time.sleep(5)
+
+        # while not(self.target.get_flag()): #and (time.time() - self.target.last_time) < self.max_searching_time:
+        #     yaw = self.position_sensor.get_sample('yaw')
+        #     # max angle w stopniach -> zakres 'rozgladania sie' lodzi
+        #     if (yaw > - SEARCH_MAX_ANGLE_ABS and yaw < 0) or (yaw > SEARCH_MAX_ANGLE_ABS):
+        #         self.turning_left(-10.)  # 10 deg/sec
+        #         flag =  self.wait_and_check(0.5)
+        #         if flag:
+        #             return True
+        #     elif (yaw > 0 and yaw < SEARCH_MAX_ANGLE_ABS) or (yaw < - SEARCH_MAX_ANGLE_ABS):
+        #         self.turning_right(-10.)  # 10 deg/sec
+        #         flag = self.wait_and_check(0.5)
+        #         if flag:
+        #             return True
 
         #jezeli nie znalazl i szukal wiecej niz 10 sec to plyn do przodu i znowu szukaj (glupie troche)
         if not (self.target.get_flag()):
-            self.forward(200)
-            self.wait_and_check(3)
-            self.look_for_detections()
-        else:
-            self.stop()
-            self.follow_object(200)
-        # tutaj jakas decyzja ktory obiekt sledzic?
-        # [PRZECZYTAJ] Moze od razu szukajmy danego biektu jesli nie zdnajdziemy w danym czasie zmieniamy cel?
-        # [PRZECZYTAJ] Wymaga dopracowania moze jazda do przodu po jakims czasie i tam się rozejrzenie
-        # no i wywolanie sledzenia
+            return False
+
+        return True
+
 
 
     def turning_left(self, vel):
@@ -115,36 +163,47 @@ class Autonomy(threading.Thread):
     def turning_right(self, vel):
         self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.yaw_PID.getSetPoint() + vel)
 
+    def bypassing_obstacles(self):
+        pass #tu sposob omijania przeszkod
+
     def follow_object(self, velocity):
-        print("FOLLOW DAMN TRAIN")
 
         # zeby mozna bylo sterowac tylko za pomoca offsetu z kamery
         self.pid_thread.yaw_PID.turn_off()
         self.pid_thread.center_x_PID.turn_on()
 
         self.forward(velocity)
+
+        start = time.time()
+
+        self.forward(100)
         time.sleep(5)
         self.stop()
+        print("STOP")
         time.sleep(5)
-
-
+        self.pid_thread.yaw_PID.turn_on()
+        self.pid_thread.center_x_PID.turn_off()
+        return False
 
         # while self.target.get_flag():
         #     obstacles = self.target.get_obstacles_to_avoid()
-        #     if len(obstacles) == 0:
-        #         # self.pid_thread.center_x_PID.center_x_diff = self.pid_thread.center_x_PID.update(center_offset[0])  # x
-        #         self.forward(velocity)
-        #     else:
-        #         pass # tu logika do wymijania obiektow
-
-        # jeśli nie widzi obiektu przez dłuzszy czas to znowu wywołuje 'rozgladanie sie'
-        # [PRZECZYTAJ] Warunek wyjścia potrzebny
-        print("KONIEC")
-        # wrucenie do normalnych nastaw
-        self.pid_thread.yaw_PID.turn_on()
-        self.pid_thread.center_x_PID.turn_off()
-        # szukanie nastepnych obiektow
-        self.look_for_detections()
+        #     if len(obstacles) > 0:
+        #         self.bypassing_obstacles()
+        #     # elif self.target.get_fill_level() > 70:
+        #     elif (time.time() - start) > 4:
+        #         self.forward(300)
+        #         time.sleep(5)
+        #         self.stop()
+        #         print("STOP")
+        #         time.sleep(5)
+        #         self.pid_thread.yaw_PID.turn_on()
+        #         self.pid_thread.center_x_PID.turn_off()
+        #         return False
+        #
+        # # wrucenie do normalnych nastaw
+        # self.pid_thread.yaw_PID.turn_on()
+        # self.pid_thread.center_x_PID.turn_off()
+        # return True
 
     def hit_object(self):
         # TODO: warunek
@@ -190,9 +249,8 @@ class Autonomy(threading.Thread):
 
     def wait_and_check(self, wait_time):
         start_time = time.time()
-        while start_time- time.time() < wait_time:
+        while start_time - time.time() < wait_time:
             if self.target.get_flag():
-                self.follow_object(200)
-                break
-
+                return True
+        return False
 
