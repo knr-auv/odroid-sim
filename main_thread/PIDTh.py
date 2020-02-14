@@ -28,13 +28,13 @@ class PIDThread(threading.Thread):
         # TODO: depth_PID object and things related to it
 
         self.center_x_PID = PID()
-        self.center_x_diff = 0
+
 
         self.integrator = Integrator()
         # global motors_speed_diff_pid, motors_speed_pad
         global motors_speed_pad
         self.position_sensor = None
-        self.roll_diff, self.pitch_diff, self.yaw_diff, self.velocity_diff, self.depth_diff = 0, 0, 0, 0, 0
+        self.velocity_diff = 0
 
         max_sum_output = 900.
         self.roll_PID.setMaxOutput(max_sum_output / 4)
@@ -63,10 +63,10 @@ class PIDThread(threading.Thread):
             #print("{} {} {} {]".format(roll, pitch, yaw,  depth))
             # self.plotter.plot(yaw)
             # print(yaw)
-            self.roll_diff = self.roll_PID.update(roll)
-            self.pitch_diff = self.pitch_PID.update(pitch)
-            self.yaw_diff = self.yaw_PID.update(yaw)  # maybe try:  'gyro_raw_x' 'gro_proc_x'
-            self.depth_diff = self.depth_PID.update(depth)
+            self.roll_PID.update(roll)
+            self.pitch_PID.update(pitch)
+            self.yaw_PID.update(yaw)  # maybe try:  'gyro_raw_x' 'gro_proc_x'
+            self.depth_PID.update(depth)
             # self.velocity_diff = self.velocity_PID.update(self.IMU.get_sample('vel_x'))
 
             # prints for testing reasons
@@ -89,21 +89,20 @@ class PIDThread(threading.Thread):
             self.printer.print_out()
             # print(time.time()-now)
             now = time.time()
-            print(self.center_x_diff)
             time.sleep(0.1)
 
     def roll_control(self):
-        self.pid_motors_speeds_update[4] -= self.roll_diff
-        self.pid_motors_speeds_update[2] += self.roll_diff
+        self.pid_motors_speeds_update[4] -= self.roll_PID.get_diff()
+        self.pid_motors_speeds_update[2] += self.roll_PID.get_diff()
 
     def pitch_control(self):
-        self.pid_motors_speeds_update[2] += self.pitch_diff  # * 2 / 3
-        self.pid_motors_speeds_update[4] += self.pitch_diff  # * 2 / 3
-        self.pid_motors_speeds_update[3] -= self.pitch_diff
+        self.pid_motors_speeds_update[2] += self.pitch_PID.get_diff()
+        self.pid_motors_speeds_update[4] += self.pitch_PID.get_diff()
+        self.pid_motors_speeds_update[3] -= self.pitch_PID.get_diff()
 
     def yaw_control(self):
-        self.pid_motors_speeds_update[0] += self.yaw_diff
-        self.pid_motors_speeds_update[1] -= self.yaw_diff
+        self.pid_motors_speeds_update[0] += self.yaw_PID.get_diff()
+        self.pid_motors_speeds_update[1] -= self.yaw_PID.get_diff()
 
     def pad_control(self):
         self.pid_motors_speeds_update[0] += motors_speed_pad[0]
@@ -118,13 +117,13 @@ class PIDThread(threading.Thread):
         self.pid_motors_speeds_update[1] -= self.velocity_diff
 
     def center_x_control(self):
-        self.pid_motors_speeds_update[0] += self.center_x_diff
-        self.pid_motors_speeds_update[1] -= self.center_x_diff
+        self.pid_motors_speeds_update[0] += self.center_x_PID.get_diff()
+        self.pid_motors_speeds_update[1] -= self.center_x_PID.get_diff()
 
     def depth_control(self):
-        self.pid_motors_speeds_update[2] += 5 * self.depth_diff
-        self.pid_motors_speeds_update[3] += 5 * self.depth_diff
-        self.pid_motors_speeds_update[4] += 5 * self.depth_diff
+        self.pid_motors_speeds_update[2] += 5 * self.depth_PID.get_diff()
+        self.pid_motors_speeds_update[3] += 5 * self.depth_PID.get_diff()
+        self.pid_motors_speeds_update[4] += 5 * self.depth_PID.get_diff()
 
     # method that updates motors velocity
     # you can pass velocity to pid_motors_speeds_update in cose to set the velocity on motors without PID controller

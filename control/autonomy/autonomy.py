@@ -41,11 +41,11 @@ class Autonomy(threading.Thread):
         pid_thread.pitch_PID.setPIDCoefficients(10, 2, 1)
         pid_thread.yaw_PID.setPIDCoefficients(4, 3, 0)
         pid_thread.depth_PID.setPIDCoefficients(30, 0, 0)
-        pid_thread.center_x_PID.setPIDCoefficients(4, 1, 0) # TODO: pid val
+        pid_thread.center_x_PID.setPIDCoefficients(0.5, 0, 0) # TODO: pid val
         pid_thread.center_x_PID.turn_off() # Na poczatku uzywamy tylko yaw_PID
         pid_thread.depth_PID.setSetPoint(1.1)
         pid_thread.center_x_PID.setSetPoint(420)
-
+        # pid_thread.yaw_PID.turn_off()
         global motors_speed_pad
 
 
@@ -64,8 +64,8 @@ class Autonomy(threading.Thread):
             while True:
                 print("ROZGLADANIE")
                 flag = self.look_for_target()
-                # if flag:
-                #     break
+                if flag:
+                    break
                 print("ZMINAN POZYCJI")
                 flag = self.change_position()
                 if flag:
@@ -74,22 +74,26 @@ class Autonomy(threading.Thread):
             print("ZNALEZIONO")
             lost_flag = self.follow_object(200)
 
-            if not lost_flag:
-                self.target.change_target()
-            else:
-                break
+            # if not lost_flag:
+            #     self.target.change_target()
+            # else:
+            #     break #tu akcja zwiazana z targetem po osiagnieciu go
 
         print("KONIEC")
 
     def catch_detections(self):
         # lapanie ramek danych i wpisywanie ich w pola, ktorych bedziemy uzywac do sterowania
+        prev_time = time.time()
         while True:
             with self.lock:
                 self.raw_data_frame = self.conn.getDataFrame()
                 self.target.update_target_position(self.raw_data_frame)
                 self.target_position, self.cam_num = self.target.get_target_position()
                 self.target_last_seen_position, _k = self.target.get_target_prev_position()
-                self.pid_thread.center_x_diff = self.pid_thread.center_x_PID.update(self.target_position[0])
+                if time.time() - prev_time > 0.1:
+                    self.pid_thread.center_x_PID.update(self.target_position[0])
+                    prev_time = time.time()
+                # print(self.target_position[0], self.pid_thread.center_x_PID.get_diff())
                 # if self.target.get_flag():
                 #     print("MAM")
 
@@ -106,32 +110,34 @@ class Autonomy(threading.Thread):
     def look_for_target(self):
 
         # jezeli widzi juz cel
-        # if self.target.get_flag():
-        #     return True
-        #
-        # self.stop()
-        # if self.wait_and_check(1.):
+        if self.target.get_flag():
+            return True
+
+        self.stop()
+        # flag = self.wait_and_check(1.)
+        # if flag:
         #     return True
 
+        print("OBROTY")
         for i in range(5):
             self.turning_left(-10.)  # 10 deg/sec
-            time.sleep(0.5)
-            # flag = self.wait_and_check(0.5)
-            # if flag:
-            #     return True
+            # time.sleep(0.5)
+            flag = self.wait_and_check(0.5)
+            if flag:
+                return True
         for i in range(10):
             self.turning_right(-10.)  # 10 deg/sec
-            # flag = self.wait_and_check(0.5)
-            time.sleep(0.5)
-            # if flag:
-            #     return True
+            flag = self.wait_and_check(0.5)
+            # time.sleep(0.5)
+            if flag:
+                return True
 
         for i in range(5):
             self.turning_left(-10.)  # 10 deg/sec
-            # flag = self.wait_and_check(0.5)
-            time.sleep(0.5)
-            # if flag:
-            #     return True
+            flag = self.wait_and_check(0.5)
+            # time.sleep(0.5)
+            if flag:
+                return True
 
         time.sleep(5)
 
@@ -169,41 +175,43 @@ class Autonomy(threading.Thread):
     def follow_object(self, velocity):
 
         # zeby mozna bylo sterowac tylko za pomoca offsetu z kamery
-        self.pid_thread.yaw_PID.turn_off()
-        self.pid_thread.center_x_PID.turn_on()
+        with self.lock:
+            self.pid_thread.yaw_PID.turn_off()
+            self.pid_thread.center_x_PID.turn_on()
 
         self.forward(velocity)
 
         start = time.time()
 
-        self.forward(100)
-        time.sleep(5)
-        self.stop()
-        print("STOP")
-        time.sleep(5)
+        # self.forward(200)
+        # time.sleep(10)
+        # self.stop()
+        # print("STOP")
+        # time.sleep(10)
+        # with self.lock:
+        #     self.pid_thread.yaw_PID.turn_on()
+        #     self.pid_thread.center_x_PID.turn_off()
+        # return False
+
+        while self.target.get_flag():
+            obstacles = self.target.get_obstacles_to_avoid()
+            if len(obstacles) > 0:
+                self.bypassing_obstacles()
+            # elif self.target.get_fill_level() > 70:
+            elif (time.time() - start) > 4:
+                self.forward(300)
+                time.sleep(5)
+                self.stop()
+                print("STOP")
+                time.sleep(5)
+                self.pid_thread.yaw_PID.turn_on()
+                self.pid_thread.center_x_PID.turn_off()
+                return False
+
+        # wrucenie do normalnych nastaw
         self.pid_thread.yaw_PID.turn_on()
         self.pid_thread.center_x_PID.turn_off()
-        return False
-
-        # while self.target.get_flag():
-        #     obstacles = self.target.get_obstacles_to_avoid()
-        #     if len(obstacles) > 0:
-        #         self.bypassing_obstacles()
-        #     # elif self.target.get_fill_level() > 70:
-        #     elif (time.time() - start) > 4:
-        #         self.forward(300)
-        #         time.sleep(5)
-        #         self.stop()
-        #         print("STOP")
-        #         time.sleep(5)
-        #         self.pid_thread.yaw_PID.turn_on()
-        #         self.pid_thread.center_x_PID.turn_off()
-        #         return False
-        #
-        # # wrucenie do normalnych nastaw
-        # self.pid_thread.yaw_PID.turn_on()
-        # self.pid_thread.center_x_PID.turn_off()
-        # return True
+        return True
 
     def hit_object(self):
         # TODO: warunek

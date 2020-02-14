@@ -31,6 +31,10 @@ class PID:
 
         self.max_output = 0
 
+        self.diff = 0
+
+        self.on_off = True
+
     def update(self, feedback):
 
         error = self.set_point - feedback
@@ -62,10 +66,10 @@ class PID:
             if self.output > self.max_output:
                 self.output = self.max_output
 
-            return self.output
+            self.diff = self.output
 
         else:
-            return 0  #self.output_prev
+            self.diff = 0  #self.output_prev
 
     def setKp(self, Kp):
         self.Kp = Kp
@@ -107,13 +111,19 @@ class PID:
         return self.set_point
 
     def turn_off(self):
+        if self.on_off:
+            self.memory = [self.Kp, self.Ki, self.Kd]
         self.Kp = 0
         self.Ki = 0
         self.Kd = 0
-        self.memory = [self.Kp, self.Ki, self.Kd]
+        self.on_off = False
 
     def turn_on(self):
         self.Kp = self.memory[0]
         self.Ki = self.memory[1]
         self.Kd = self.memory[2]
+        self.on_off = True
+
+    def get_diff(self):
+        return self.diff
 

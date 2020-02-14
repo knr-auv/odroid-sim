@@ -8,12 +8,12 @@ class Target:
         self.priority_list = [b'GATE', b'STRING']  # Lista priorytetow
         self.priority_list_pointer = 0  # Ktora lista priorytetów jest wybrana
         self.last_time = time.time()  # Czas kiedy cel byl osatnio widziany
-        self.max_time = 1000  # Maksymalny czas bez wykrycia celu
+        self.max_time = 1 # Maksymalny czas bez wykrycia celu
         self.obstacle = []  # Lista przeszkod widzianych przez kamere
         self.obstacle_to_avoid = []
 
         # POZYCJA
-        self.position = [0, 0]
+        self.position = [420, 0]
         self.distance = []
         self.last_seen_position = []
         self.last_seen_distance = []
