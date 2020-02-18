@@ -42,9 +42,12 @@ class Autonomy(threading.Thread):
         pid_thread.yaw_PID.setPIDCoefficients(4, 3, 0)
         pid_thread.depth_PID.setPIDCoefficients(30, 0, 0)
         pid_thread.center_x_PID.setPIDCoefficients(0.5, 0, 0) # TODO: pid val
+        pid_thread.center_y_PID.setPIDCoefficients(20, 0, 0) # TODO: pid val
         pid_thread.center_x_PID.turn_off() # Na poczatku uzywamy tylko yaw_PID
+        pid_thread.center_y_PID.turn_off()
         pid_thread.depth_PID.setSetPoint(1.1)
-        pid_thread.center_x_PID.setSetPoint(420)
+        pid_thread.center_x_PID.setSetPoint(0)
+        pid_thread.center_x_PID.setSetPoint(0)
         # pid_thread.yaw_PID.turn_off()
         global motors_speed_pad
 
@@ -76,9 +79,9 @@ class Autonomy(threading.Thread):
 
             print(lost_flag)
 
-            if True:
+            # if True:
             # if not lost_flag:
-                break
+            #     break
             #     self.target.change_target()
             # else:
             #     break #tu akcja zwiazana z targetem po osiagnieciu go
@@ -96,7 +99,9 @@ class Autonomy(threading.Thread):
                 self.target_last_seen_position, _k = self.target.get_target_prev_position()
                 if time.time() - prev_time > 0.1:
                     self.pid_thread.center_x_PID.update(self.target_position[0])
+                    self.pid_thread.center_y_PID.update(self.target_position[1])
                     prev_time = time.time()
+                    print (self.pid_thread.center_x_PID.get_diff() ,self.pid_thread.center_y_PID.get_diff())
                 # print(self.target_position[0], self.pid_thread.center_x_PID.get_diff())
                 # if self.target.get_flag():
                 #     print("MAM")
@@ -194,6 +199,8 @@ class Autonomy(threading.Thread):
         with self.lock:
             self.pid_thread.yaw_PID.turn_off()
             self.pid_thread.center_x_PID.turn_on()
+            self.pid_thread.depth_PID.turn_off()
+            self.pid_thread.center_y_PID.turn_on()
 
         self.forward(velocity)
 
@@ -214,28 +221,34 @@ class Autonomy(threading.Thread):
             # obstacles = self.target.get_obstacles_to_avoid()
             # if len(obstacles) > 0:
             #     self.bypassing_obstacles()
-            # elif self.target.get_fill_level() > 70:
-            print(time.time() - start)
-            if (time.time() - start) > 4:
+            if self.target.get_fill_level() > 70:
+            # if (time.time() - start) > 4:
+                print("PIZDA DO PRZODU")
                 self.forward(300)
                 time.sleep(5)
                 self.stop()
                 print("STOP")
                 time.sleep(10)
                 with self.lock:
-                    self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.yaw_PID.getSetPoint())
+                    self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.position_sensor.get_sample('yaw'))
                     self.pid_thread.yaw_PID.turn_on()
                     self.pid_thread.center_x_PID.turn_off()
+                    self.pid_thread.depth_PID.setSetPoint(self.pid_thread.position_sensor.get_sample('depth'))
+                    self.pid_thread.depth_PID.turn_on()
+                    self.pid_thread.center_y_PID.turn_off()
+
                 return False
             with self.lock:
                 stop = self.target.get_flag()
-            print(stop)
 
         # wrucenie do normalnych nastaw
         with self.lock:
-            self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.yaw_PID.getSetPoint())
+            self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.position_sensor.get_sample('yaw'))
             self.pid_thread.yaw_PID.turn_on()
             self.pid_thread.center_x_PID.turn_off()
+            self.pid_thread.depth_PID.setSetPoint(self.pid_thread.position_sensor.get_sample('depth'))
+            self.pid_thread.depth_PID.turn_on()
+            self.pid_thread.center_y_PID.turn_off()
         return True
 
     def hit_object(self):

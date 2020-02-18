@@ -28,6 +28,7 @@ class PIDThread(threading.Thread):
         # TODO: depth_PID object and things related to it
 
         self.center_x_PID = PID()
+        self.center_y_PID = PID()
 
 
         self.integrator = Integrator()
@@ -78,7 +79,9 @@ class PIDThread(threading.Thread):
             self.yaw_control()
             self.pad_control()
             self.center_x_control()
+            self.center_y_control()
             self.depth_control()
+
 
             self.printer.set_roll(roll)
             self.printer.set_pitch(pitch)
@@ -120,10 +123,15 @@ class PIDThread(threading.Thread):
         self.pid_motors_speeds_update[0] += self.center_x_PID.get_diff()
         self.pid_motors_speeds_update[1] -= self.center_x_PID.get_diff()
 
-    def depth_control(self):
+    def depth_control(self): #depth z plusem
         self.pid_motors_speeds_update[2] += 5 * self.depth_PID.get_diff()
         self.pid_motors_speeds_update[3] += 5 * self.depth_PID.get_diff()
         self.pid_motors_speeds_update[4] += 5 * self.depth_PID.get_diff()
+
+    def center_y_control(self):
+        self.pid_motors_speeds_update[2] -= self.center_y_PID.get_diff()
+        self.pid_motors_speeds_update[3] -= self.center_y_PID.get_diff()
+        self.pid_motors_speeds_update[4] -= self.center_y_PID.get_diff()
 
     # method that updates motors velocity
     # you can pass velocity to pid_motors_speeds_update in cose to set the velocity on motors without PID controller

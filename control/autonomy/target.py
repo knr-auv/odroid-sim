@@ -8,12 +8,12 @@ class Target:
         self.priority_list = [b'GATE', b'STRING']  # Lista priorytetow
         self.priority_list_pointer = 0  # Ktora lista priorytetów jest wybrana
         self.last_time = time.time()  # Czas kiedy cel byl osatnio widziany
-        self.max_time = 10 # Maksymalny czas bez wykrycia celu
+        self.max_time = 1 # Maksymalny czas bez wykrycia celu
         self.obstacle = []  # Lista przeszkod widzianych przez kamere
         self.obstacle_to_avoid = []
 
         # POZYCJA
-        self.position = [420, 0]
+        self.position = [0, 0]
         self.distance = []
         self.last_seen_position = []
         self.last_seen_distance = []
@@ -42,7 +42,7 @@ class Target:
         if len(objects_detected_frame) >= 2:
             for obj in objects_detected_frame[0]:
                 if obj[4][0] == self.priority_list[self.priority_list_pointer]:
-                    self.position = obj[1:2]
+                    self.position = obj[1:3]
                     self.fill_level = obj[3]
                     tmp_flag = True
                     self.cam = 0
@@ -53,7 +53,7 @@ class Target:
                     self.obstacle_flag = True
             for obj in objects_detected_frame[1]:
                 if obj[4][0] == self.priority_list[self.priority_list_pointer]:
-                    self.position = obj[1:2]
+                    self.position = obj[1:3]
                     self.fill_level = obj[3]
                     tmp_flag = True
                     self.cam = 1
@@ -86,7 +86,7 @@ class Target:
         if self.priority_list_pointer < 1:
             self.priority_list_pointer += 1  # Zwiększenie priorytetu o 1
             self.first_view_time = None
-            self.position = [420, 0]
+            self.position = [420, 150]
             self.distance.clear()
             self.cam = None
             self.target_flag = False
