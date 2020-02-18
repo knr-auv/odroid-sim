@@ -74,7 +74,11 @@ class Autonomy(threading.Thread):
             print("ZNALEZIONO")
             lost_flag = self.follow_object(200)
 
+            print(lost_flag)
+
+            if True:
             # if not lost_flag:
+                break
             #     self.target.change_target()
             # else:
             #     break #tu akcja zwiazana z targetem po osiagnieciu go
@@ -110,8 +114,10 @@ class Autonomy(threading.Thread):
     def look_for_target(self):
 
         # jezeli widzi juz cel
-        if self.target.get_flag():
-            return True
+        with self.lock:
+            # print (self.target.get_flag())
+            if self.target.get_flag():
+                return True
 
         self.stop()
         # flag = self.wait_and_check(1.)
@@ -121,21 +127,30 @@ class Autonomy(threading.Thread):
         print("OBROTY")
         for i in range(5):
             self.turning_left(-10.)  # 10 deg/sec
-            # time.sleep(0.5)
             flag = self.wait_and_check(0.5)
+            # time.sleep(0.5)
+            # with self.lock:
+            #     flag = self.target.get_flag()
+            # print(flag)
             if flag:
                 return True
         for i in range(10):
             self.turning_right(-10.)  # 10 deg/sec
             flag = self.wait_and_check(0.5)
             # time.sleep(0.5)
+            # with self.lock:
+            #     flag = self.target.get_flag()
+            # print(flag)
             if flag:
                 return True
 
         for i in range(5):
             self.turning_left(-10.)  # 10 deg/sec
-            flag = self.wait_and_check(0.5)
+            #flag = self.wait_and_check(0.5)
             # time.sleep(0.5)
+            # with self.lock:
+            #     flag = self.target.get_flag()
+            # print(flag)
             if flag:
                 return True
 
@@ -156,8 +171,9 @@ class Autonomy(threading.Thread):
         #             return True
 
         #jezeli nie znalazl i szukal wiecej niz 10 sec to plyn do przodu i znowu szukaj (glupie troche)
-        if not (self.target.get_flag()):
-            return False
+        with self.lock:
+            if not (self.target.get_flag()):
+                return False
 
         return True
 
@@ -192,25 +208,34 @@ class Autonomy(threading.Thread):
         #     self.pid_thread.yaw_PID.turn_on()
         #     self.pid_thread.center_x_PID.turn_off()
         # return False
+        stop = True
 
-        while self.target.get_flag():
-            obstacles = self.target.get_obstacles_to_avoid()
-            if len(obstacles) > 0:
-                self.bypassing_obstacles()
+        while stop:
+            # obstacles = self.target.get_obstacles_to_avoid()
+            # if len(obstacles) > 0:
+            #     self.bypassing_obstacles()
             # elif self.target.get_fill_level() > 70:
-            elif (time.time() - start) > 4:
+            print(time.time() - start)
+            if (time.time() - start) > 4:
                 self.forward(300)
                 time.sleep(5)
                 self.stop()
                 print("STOP")
-                time.sleep(5)
-                self.pid_thread.yaw_PID.turn_on()
-                self.pid_thread.center_x_PID.turn_off()
+                time.sleep(10)
+                with self.lock:
+                    self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.yaw_PID.getSetPoint())
+                    self.pid_thread.yaw_PID.turn_on()
+                    self.pid_thread.center_x_PID.turn_off()
                 return False
+            with self.lock:
+                stop = self.target.get_flag()
+            print(stop)
 
         # wrucenie do normalnych nastaw
-        self.pid_thread.yaw_PID.turn_on()
-        self.pid_thread.center_x_PID.turn_off()
+        with self.lock:
+            self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.yaw_PID.getSetPoint())
+            self.pid_thread.yaw_PID.turn_on()
+            self.pid_thread.center_x_PID.turn_off()
         return True
 
     def hit_object(self):
@@ -258,7 +283,8 @@ class Autonomy(threading.Thread):
     def wait_and_check(self, wait_time):
         start_time = time.time()
         while start_time - time.time() < wait_time:
-            if self.target.get_flag():
-                return True
+            with self.lock:
+                if self.target.get_flag():
+                    return True
         return False
 

@@ -8,7 +8,7 @@ class Target:
         self.priority_list = [b'GATE', b'STRING']  # Lista priorytetow
         self.priority_list_pointer = 0  # Ktora lista priorytetów jest wybrana
         self.last_time = time.time()  # Czas kiedy cel byl osatnio widziany
-        self.max_time = 1 # Maksymalny czas bez wykrycia celu
+        self.max_time = 10 # Maksymalny czas bez wykrycia celu
         self.obstacle = []  # Lista przeszkod widzianych przez kamere
         self.obstacle_to_avoid = []
 
@@ -35,8 +35,8 @@ class Target:
 
     def update_target_position(self, objects_detected_frame):
         self.prev_target_flag = self.target_flag
-        self.target_flag = False
-        self.lost_target_flag = False
+        # self.lost_target_flag = False
+        tmp_flag = False
 
         self.obstacle.clear()
         if len(objects_detected_frame) >= 2:
@@ -44,7 +44,7 @@ class Target:
                 if obj[4][0] == self.priority_list[self.priority_list_pointer]:
                     self.position = obj[1:2]
                     self.fill_level = obj[3]
-                    self.target_flag = True
+                    tmp_flag = True
                     self.cam = 0
                     if self.first_view_time is None:
                         self.first_view_time = time.time()
@@ -55,7 +55,7 @@ class Target:
                 if obj[4][0] == self.priority_list[self.priority_list_pointer]:
                     self.position = obj[1:2]
                     self.fill_level = obj[3]
-                    self.target_flag = True
+                    tmp_flag = True
                     self.cam = 1
                     if self.first_view_time is None:
                         self.first_view_time = time.time()
@@ -63,7 +63,7 @@ class Target:
                     self.obstacle.append(obj)
                     self.obstacle_flag = True
 
-        if self.target_flag:
+        if tmp_flag:
             # jezeli widzi target i ostatnio widzial, to uaktualnij poprzednio widziana pozycje
             if self.prev_target_flag:
                 self.last_seen_position = self.position
