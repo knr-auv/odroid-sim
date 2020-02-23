@@ -1,3 +1,4 @@
+import random
 import socket
 from struct import *
 import logging
@@ -70,3 +71,4 @@ class SimulationClient:
 
         ack = self.data[lenght:]
         return json.loads(self.data[:lenght])
+
