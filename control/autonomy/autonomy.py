@@ -1,6 +1,7 @@
 from control.autonomy.target import Target
 import time
 import threading
+import random
 
 
 from tools.connection.connectionOdroid import *
@@ -36,11 +37,16 @@ class Autonomy(threading.Thread):
         # aktualny cel do ktorego zmierzamy
         self.target = Target()
 
+        # ONLY FOR SIMULATION SETTING RANDOM P:
+        rand = - random.randrange(7,15)
+        config.get_client().set_orien([ rand, 0.3, -5.], [0., 0., 0.])
+        print(rand)
+
         # ustawienie PID-kow
         pid_thread.roll_PID.setPIDCoefficients(4, 2, 2)
         pid_thread.pitch_PID.setPIDCoefficients(10, 2, 1)
         pid_thread.yaw_PID.setPIDCoefficients(4, 3, 0)
-        pid_thread.depth_PID.setPIDCoefficients(30, 0, 0)
+        pid_thread.depth_PID.setPIDCoefficients(200, 0, 0)
         pid_thread.center_x_PID.setPIDCoefficients(0.5, 0, 0) # TODO: pid val
         pid_thread.center_y_PID.setPIDCoefficients(20, 0, 0) # TODO: pid val
         pid_thread.center_x_PID.turn_off() # Na poczatku uzywamy tylko yaw_PID
@@ -101,7 +107,7 @@ class Autonomy(threading.Thread):
                     self.pid_thread.center_x_PID.update(self.target_position[0])
                     self.pid_thread.center_y_PID.update(self.target_position[1])
                     prev_time = time.time()
-                    print (self.pid_thread.center_x_PID.get_diff() ,self.pid_thread.center_y_PID.get_diff())
+                    # print (self.pid_thread.center_x_PID.get_diff() ,self.pid_thread.center_y_PID.get_diff())
                 # print(self.target_position[0], self.pid_thread.center_x_PID.get_diff())
                 # if self.target.get_flag():
                 #     print("MAM")
@@ -132,32 +138,32 @@ class Autonomy(threading.Thread):
         print("OBROTY")
         for i in range(5):
             self.turning_left(-10.)  # 10 deg/sec
-            flag = self.wait_and_check(0.5)
-            # time.sleep(0.5)
-            # with self.lock:
-            #     flag = self.target.get_flag()
+            time.sleep(0.5)
+            with self.lock:
+                flag = self.target.get_flag()
             # print(flag)
             if flag:
-                return True
+               return True
+            print(i)
         for i in range(10):
             self.turning_right(-10.)  # 10 deg/sec
-            flag = self.wait_and_check(0.5)
-            # time.sleep(0.5)
-            # with self.lock:
-            #     flag = self.target.get_flag()
+            time.sleep(0.5)
+            with self.lock:
+                flag = self.target.get_flag()
             # print(flag)
             if flag:
                 return True
+            print(i)
 
         for i in range(5):
             self.turning_left(-10.)  # 10 deg/sec
-            #flag = self.wait_and_check(0.5)
-            # time.sleep(0.5)
-            # with self.lock:
-            #     flag = self.target.get_flag()
+            time.sleep(0.5)
+            with self.lock:
+                flag = self.target.get_flag()
             # print(flag)
             if flag:
                 return True
+            print(i)
 
         time.sleep(5)
 
@@ -222,7 +228,6 @@ class Autonomy(threading.Thread):
             # if len(obstacles) > 0:
             #     self.bypassing_obstacles()
             if self.target.get_fill_level() > 70:
-            # if (time.time() - start) > 4:
                 print("PIZDA DO PRZODU")
                 self.forward(300)
                 time.sleep(5)
@@ -292,12 +297,4 @@ class Autonomy(threading.Thread):
         self.forward(800)
         sleep(3)
         self.stop()
-
-    def wait_and_check(self, wait_time):
-        start_time = time.time()
-        while start_time - time.time() < wait_time:
-            with self.lock:
-                if self.target.get_flag():
-                    return True
-        return False
 

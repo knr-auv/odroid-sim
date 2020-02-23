@@ -51,7 +51,7 @@ class PIDThread(threading.Thread):
 
 
         self.printer = Printer()
-        # self.plotter = Plotter()
+        self.plotter = Plotter()
 
     def run(self):
         now = time.time()
@@ -62,7 +62,11 @@ class PIDThread(threading.Thread):
             yaw = self.position_sensor.get_sample('yaw')
             depth = self.position_sensor.get_sample('depth')
             #print("{} {} {} {]".format(roll, pitch, yaw,  depth))
-            # self.plotter.plot(yaw)
+
+
+            self.plotter.plot(depth)
+
+
             # print(yaw)
             self.roll_PID.update(roll)
             self.pitch_PID.update(pitch)
@@ -124,9 +128,9 @@ class PIDThread(threading.Thread):
         self.pid_motors_speeds_update[1] -= self.center_x_PID.get_diff()
 
     def depth_control(self): #depth z plusem
-        self.pid_motors_speeds_update[2] += 5 * self.depth_PID.get_diff()
-        self.pid_motors_speeds_update[3] += 5 * self.depth_PID.get_diff()
-        self.pid_motors_speeds_update[4] += 5 * self.depth_PID.get_diff()
+        self.pid_motors_speeds_update[2] += self.depth_PID.get_diff()
+        self.pid_motors_speeds_update[3] += self.depth_PID.get_diff()
+        self.pid_motors_speeds_update[4] += self.depth_PID.get_diff()
 
     def center_y_control(self):
         self.pid_motors_speeds_update[2] -= self.center_y_PID.get_diff()
