@@ -1,5 +1,4 @@
-
-from server import *
+from tools.connection.server import Server
 from threading import Thread
 
 #ip = '192.168.137.208' #adres odroida
@@ -9,8 +8,9 @@ from threading import Thread
 #
 # PORT = 8181
 
+
 #klasa służaca do tworzenia wątku ktory wyswietla presłane mu obiekty(na potrzeby testów)
-class DataUser():
+class DataUser:
 	def __init__(self, dataFrame):
 		self.dataFrame = dataFrame
 
@@ -22,12 +22,14 @@ class DataUser():
 	def setDataFrame(self, dataFrame):
 		self.dataFrame = dataFrame
 
+
 class Connection(Thread):
 	def __init__(self, ip, port):
 		Thread.__init__(self)
+		print('Creating connection...')
 		self.server = Server(ip, port)
 		#obiekt stworzony do testow, sama koncepcja wykorzystywania odebranych danych do zmiany
-		self.dataUser = DataUser([])
+		#self.dataUser = DataUser([])
 		self.dataFrame = []
 		print('Server running at', ip, ': PORT :', port)
 
@@ -44,5 +46,5 @@ class Connection(Thread):
 
 if __name__ == '__main__':
 	print('start connection')
-	conn = Connection('10.41.0.42', 8787) #w MainOdroid
+	conn = Connection('10.42.0.42', 8687) #w MainOdroid
 	conn.start()

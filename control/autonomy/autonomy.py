@@ -1,6 +1,7 @@
 from control.autonomy.target import Target
 import time
 import threading
+import random
 
 
 from tools.connection.connectionOdroid import *
@@ -17,11 +18,11 @@ class Autonomy(threading.Thread):
     when there are many possibilities.
     It inherit from Thread class"""
     def __init__(self, pid_thread, config):
+        print('autonomy 1')
         threading.Thread.__init__(self)
         self.lock = threading.Lock()
         self.pid_thread = pid_thread
         self.position_sensor = self.pid_thread.get_position_sensor()
-
 
         # tworzenie obiektu watku polaczenia z jetsonem
         self.conn = Connection(IP_ADDRESS_2, JETSON_PORT)
@@ -36,18 +37,25 @@ class Autonomy(threading.Thread):
         # aktualny cel do ktorego zmierzamy
         self.target = Target()
 
+        # ONLY FOR SIMULATION SETTING RANDOM P:
+        rand = - random.randrange(7,15)
+        config.get_client().set_orien([-10, 0.3, -5.], [0., 0., 0.])
+        print(' pozycja wylosowana X: ', rand)
+
         # ustawienie PID-kow
         pid_thread.roll_PID.setPIDCoefficients(4, 2, 2)
         pid_thread.pitch_PID.setPIDCoefficients(10, 2, 1)
-        pid_thread.yaw_PID.setPIDCoefficients(4, 3, 0)
-        pid_thread.depth_PID.setPIDCoefficients(30, 0, 0)
-        pid_thread.center_x_PID.setPIDCoefficients(0.5, 0, 0) # TODO: pid val
-        pid_thread.center_y_PID.setPIDCoefficients(20, 0, 0) # TODO: pid val
+        pid_thread.yaw_PID.setPIDCoefficients(4, 1, 0)
+        pid_thread.depth_PID.setPIDCoefficients(200, 0.05, 5) # ernest's 200;0;0
+        pid_thread.depth_PID.setWindup(1)
+        pid_thread.center_x_PID.setPIDCoefficients(0.18, 0.14, 0.03) # TODO: pid val
+        pid_thread.center_y_PID.setPIDCoefficients(0.18, 0, 0) # TODO: pid val
         pid_thread.center_x_PID.turn_off() # Na poczatku uzywamy tylko yaw_PID
         pid_thread.center_y_PID.turn_off()
         pid_thread.depth_PID.setSetPoint(1.1)
         pid_thread.center_x_PID.setSetPoint(0)
         pid_thread.center_x_PID.setSetPoint(0)
+
         # pid_thread.yaw_PID.turn_off()
         global motors_speed_pad
 
@@ -58,7 +66,8 @@ class Autonomy(threading.Thread):
         catch_detections_thread = threading.Thread(target=self.catch_detections)
         catch_detections_thread.start()
 
-        time.sleep(15)
+        print('Diving... sleep 30sec')
+        time.sleep(30)
 
         #rozpoczecie dzialania autonomii
         while True:
@@ -66,15 +75,18 @@ class Autonomy(threading.Thread):
             print("START")
             while True:
                 print("ROZGLADANIE")
+                self.stop()
                 flag = self.look_for_target()
                 if flag:
                     break
                 print("ZMINAN POZYCJI")
+                self.stop()
                 flag = self.change_position()
                 if flag:
                     break
 
             print("ZNALEZIONO")
+            self.stop()
             lost_flag = self.follow_object(200)
 
             print(lost_flag)
@@ -101,18 +113,20 @@ class Autonomy(threading.Thread):
                     self.pid_thread.center_x_PID.update(self.target_position[0])
                     self.pid_thread.center_y_PID.update(self.target_position[1])
                     prev_time = time.time()
-                    print (self.pid_thread.center_x_PID.get_diff() ,self.pid_thread.center_y_PID.get_diff())
-                # print(self.target_position[0], self.pid_thread.center_x_PID.get_diff())
+            # print('Diff: x,y : ', self.pid_thread.center_x_PID.get_diff(), self.pid_thread.center_y_PID.get_diff())
+            # print('Target pos: ', self.target_position[0], self.pid_thread.center_x_PID.get_diff())
                 # if self.target.get_flag():
                 #     print("MAM")
 
     def change_position(self):
         self.forward(200)
-        if self.wait_and_check(3.):
+        time.sleep(3.)
+        with self.lock:
+            flag = self.target.get_flag()
+        # print(flag)
+        if flag:
             return True
         self.stop()
-        if self.wait_and_check(3.):
-            return True
 
         return False
 
@@ -131,35 +145,33 @@ class Autonomy(threading.Thread):
 
         print("OBROTY")
         for i in range(5):
-            self.turning_left(-10.)  # 10 deg/sec
-            flag = self.wait_and_check(0.5)
-            # time.sleep(0.5)
-            # with self.lock:
-            #     flag = self.target.get_flag()
+            self.turning_left(10.)  # 10 deg/sec
+            time.sleep(0.5)
+            with self.lock:
+                flag = self.target.get_flag()
             # print(flag)
             if flag:
                 return True
+
         for i in range(10):
-            self.turning_right(-10.)  # 10 deg/sec
-            flag = self.wait_and_check(0.5)
-            # time.sleep(0.5)
-            # with self.lock:
-            #     flag = self.target.get_flag()
+            self.turning_right(10.)  # 10 deg/sec
+            time.sleep(0.5)
+            with self.lock:
+                flag = self.target.get_flag()
             # print(flag)
             if flag:
                 return True
 
         for i in range(5):
-            self.turning_left(-10.)  # 10 deg/sec
-            #flag = self.wait_and_check(0.5)
-            # time.sleep(0.5)
-            # with self.lock:
-            #     flag = self.target.get_flag()
+            self.turning_left(10.)  # 10 deg/sec
+            time.sleep(0.5)
+            with self.lock:
+                flag = self.target.get_flag()
             # print(flag)
             if flag:
                 return True
 
-        time.sleep(5)
+        #time.sleep(5)
 
         # while not(self.target.get_flag()): #and (time.time() - self.target.last_time) < self.max_searching_time:
         #     yaw = self.position_sensor.get_sample('yaw')
@@ -181,8 +193,6 @@ class Autonomy(threading.Thread):
                 return False
 
         return True
-
-
 
     def turning_left(self, vel):
         self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.yaw_PID.getSetPoint() - vel)
@@ -221,14 +231,8 @@ class Autonomy(threading.Thread):
             # obstacles = self.target.get_obstacles_to_avoid()
             # if len(obstacles) > 0:
             #     self.bypassing_obstacles()
-            if self.target.get_fill_level() > 70:
-            # if (time.time() - start) > 4:
+            if self.target.get_time_of_view() > 2. and self.target.get_fill_level() > 70.:
                 print("PIZDA DO PRZODU")
-                self.forward(300)
-                time.sleep(5)
-                self.stop()
-                print("STOP")
-                time.sleep(10)
                 with self.lock:
                     self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.position_sensor.get_sample('yaw'))
                     self.pid_thread.yaw_PID.turn_on()
@@ -236,6 +240,11 @@ class Autonomy(threading.Thread):
                     self.pid_thread.depth_PID.setSetPoint(self.pid_thread.position_sensor.get_sample('depth'))
                     self.pid_thread.depth_PID.turn_on()
                     self.pid_thread.center_y_PID.turn_off()
+                self.forward(300)
+                time.sleep(5)
+                self.stop()
+                print("STOP")
+                time.sleep(10)
 
                 return False
             with self.lock:
@@ -253,17 +262,17 @@ class Autonomy(threading.Thread):
 
     def hit_object(self):
         # TODO: warunek
-        self.follow_object(self.target_position[1:3], 100)
+        self.follow_object(self.target_position[1:3])
         # TODO: warunek na oststnie widziane wypełnienie obrazu obiektem i odleglosci do obiektu
         if self.target.get_time_of_view() > 2:
             self.forward(500)
             time.sleep(2)
             self.stop()
 
-
     def forward(self, velocity):
         motors_speed_pad[0] = velocity
         motors_speed_pad[1] = velocity
+
 
     def backward(self, velocity):
         motors_speed_pad[0] = -velocity
@@ -292,12 +301,4 @@ class Autonomy(threading.Thread):
         self.forward(800)
         sleep(3)
         self.stop()
-
-    def wait_and_check(self, wait_time):
-        start_time = time.time()
-        while start_time - time.time() < wait_time:
-            with self.lock:
-                if self.target.get_flag():
-                    return True
-        return False
 

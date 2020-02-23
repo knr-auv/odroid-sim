@@ -45,13 +45,16 @@ class PIDThread(threading.Thread):
         self.depth_PID.setMaxOutput(max_sum_output / 4)
 
         self.pid_motors_speeds_update = [0, 0, 0, 0, 0]
-
+        print('pid thread 1')
         self.motors = get_motor_controller(config)
         self.motors.initialize_all()
+        print('pid thread 2')
 
 
-        self.printer = Printer()
+        # self.printer = Printer()
         # self.plotter = Plotter()
+        print('pid thread 3')
+
 
     def run(self):
         now = time.time()
@@ -62,7 +65,11 @@ class PIDThread(threading.Thread):
             yaw = self.position_sensor.get_sample('yaw')
             depth = self.position_sensor.get_sample('depth')
             #print("{} {} {} {]".format(roll, pitch, yaw,  depth))
-            # self.plotter.plot(yaw)
+
+
+            #self.plotter.plot(depth)
+
+
             # print(yaw)
             self.roll_PID.update(roll)
             self.pitch_PID.update(pitch)
@@ -83,13 +90,13 @@ class PIDThread(threading.Thread):
             self.depth_control()
 
 
-            self.printer.set_roll(roll)
-            self.printer.set_pitch(pitch)
-            self.printer.set_yaw(yaw)
+            # self.printer.set_roll(roll)
+            # self.printer.set_pitch(pitch)
+            # self.printer.set_yaw(yaw)
             # self.velocity_control()
 
             self.update_motors()
-            self.printer.print_out()
+            # self.printer.print_out()
             # print(time.time()-now)
             now = time.time()
             time.sleep(0.1)
@@ -124,9 +131,9 @@ class PIDThread(threading.Thread):
         self.pid_motors_speeds_update[1] -= self.center_x_PID.get_diff()
 
     def depth_control(self): #depth z plusem
-        self.pid_motors_speeds_update[2] += 5 * self.depth_PID.get_diff()
-        self.pid_motors_speeds_update[3] += 5 * self.depth_PID.get_diff()
-        self.pid_motors_speeds_update[4] += 5 * self.depth_PID.get_diff()
+        self.pid_motors_speeds_update[2] += self.depth_PID.get_diff()
+        self.pid_motors_speeds_update[3] += self.depth_PID.get_diff()
+        self.pid_motors_speeds_update[4] += self.depth_PID.get_diff()
 
     def center_y_control(self):
         self.pid_motors_speeds_update[2] -= self.center_y_PID.get_diff()
@@ -139,7 +146,7 @@ class PIDThread(threading.Thread):
     def update_motors(self):
         # print(self.pid_motors_speeds_update)
         motors = self.motors.run_motors(self.pid_motors_speeds_update)
-        self.printer.set_motors_value(motors)
+        # self.printer.set_motors_value(motors)
         # print(motors)
         # motors_speed_diff_pid[:] = self.pid_motors_speeds_update[:]
         # print('Po przypisaniu:')

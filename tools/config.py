@@ -10,7 +10,7 @@ class Config:
 
     def load(self, read_file):
         self.data = json.load(read_file)
-        if(self.data["mode"]=="simulation"):
+        if self.data["mode"]=="simulation":
             self.client = SimulationClient()
 
     def get(self, key):

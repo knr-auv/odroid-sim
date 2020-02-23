@@ -19,11 +19,14 @@ if __name__ == '__main__':
     print('poszło2')
     logging.basicConfig(level=logging.DEBUG)
     position_sensor = get_pos(config)
+    print('poszło2.1')
 
     # motors_control_thread = MotorsControlThread(config)
     # pos_thread = POSThread(position_sensor)
     pid_thread = PIDThread(config)
+    print('poszło2.2')
     pid_thread.set_position_sensor(position_sensor)
+    print('poszło2.3')
     control_thread = get_control(pid_thread, config)
     print('poszło3')
 
