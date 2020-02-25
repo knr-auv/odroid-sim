@@ -45,10 +45,11 @@ class Autonomy(threading.Thread):
         # ustawienie PID-kow
         pid_thread.roll_PID.setPIDCoefficients(4, 2, 2)
         pid_thread.pitch_PID.setPIDCoefficients(10, 2, 1)
-        pid_thread.yaw_PID.setPIDCoefficients(4, 3, 0)
-        pid_thread.depth_PID.setPIDCoefficients(200, 0, 0)
-        pid_thread.center_x_PID.setPIDCoefficients(0.5, 0, 0) # TODO: pid val
-        pid_thread.center_y_PID.setPIDCoefficients(20, 0, 0) # TODO: pid val
+        pid_thread.yaw_PID.setPIDCoefficients(4, 1, 0)
+        pid_thread.depth_PID.setPIDCoefficients(250, 0.0, 0.0) # ernest's 200;0;0
+        pid_thread.depth_PID.setWindup(1)
+        pid_thread.center_x_PID.setPIDCoefficients(0.10, 0, 0) # TODO: pid val
+        pid_thread.center_y_PID.setPIDCoefficients(0.10, 0, 0) # TODO: pid val
         pid_thread.center_x_PID.turn_off() # Na poczatku uzywamy tylko yaw_PID
         pid_thread.center_y_PID.turn_off()
         pid_thread.depth_PID.setSetPoint(1.1)
@@ -65,6 +66,8 @@ class Autonomy(threading.Thread):
         catch_detections_thread.start()
 
         time.sleep(15)
+        print('Diving... sleep 30sec')
+        time.sleep(30)
 
         #rozpoczecie dzialania autonomii
         while True:
@@ -72,10 +75,12 @@ class Autonomy(threading.Thread):
             print("START")
             while True:
                 print("ROZGLADANIE")
+                self.stop()
                 flag = self.look_for_target()
                 if flag:
                     break
                 print("ZMINAN POZYCJI")
+                self.stop()
                 flag = self.change_position()
                 if flag:
                     break
@@ -114,10 +119,18 @@ class Autonomy(threading.Thread):
 
     def change_position(self):
         self.forward(200)
-        if self.wait_and_check(3.):
+        time.sleep(3.)
+        with self.lock:
+            flag = self.target.get_flag()
+        # print(flag)
+        if flag:
             return True
         self.stop()
-        if self.wait_and_check(3.):
+        time.sleep(3.)
+        with self.lock:
+            flag = self.target.get_flag()
+        # print(flag)
+        if flag:
             return True
 
         return False
@@ -144,7 +157,7 @@ class Autonomy(threading.Thread):
             # print(flag)
             if flag:
                return True
-            print(i)
+            # print(i)
         for i in range(10):
             self.turning_right(-10.)  # 10 deg/sec
             time.sleep(0.5)
@@ -153,7 +166,7 @@ class Autonomy(threading.Thread):
             # print(flag)
             if flag:
                 return True
-            print(i)
+            # print(i)
 
         for i in range(5):
             self.turning_left(-10.)  # 10 deg/sec
@@ -163,7 +176,7 @@ class Autonomy(threading.Thread):
             # print(flag)
             if flag:
                 return True
-            print(i)
+            # print(i)
 
         time.sleep(5)
 
@@ -224,16 +237,14 @@ class Autonomy(threading.Thread):
         stop = True
 
         while stop:
+
             # obstacles = self.target.get_obstacles_to_avoid()
             # if len(obstacles) > 0:
             #     self.bypassing_obstacles()
-            if self.target.get_fill_level() > 70:
+            with self.lock:
+                print(self.target.check_angle())
+            if self.target.get_time_of_view() > 2. and self.target.get_fill_level() > 70.:
                 print("PIZDA DO PRZODU")
-                self.forward(300)
-                time.sleep(5)
-                self.stop()
-                print("STOP")
-                time.sleep(10)
                 with self.lock:
                     self.pid_thread.yaw_PID.setSetPoint(self.pid_thread.position_sensor.get_sample('yaw'))
                     self.pid_thread.yaw_PID.turn_on()
@@ -241,6 +252,11 @@ class Autonomy(threading.Thread):
                     self.pid_thread.depth_PID.setSetPoint(self.pid_thread.position_sensor.get_sample('depth'))
                     self.pid_thread.depth_PID.turn_on()
                     self.pid_thread.center_y_PID.turn_off()
+                self.forward(300)
+                time.sleep(5)
+                self.stop()
+                print("STOP")
+                time.sleep(10)
 
                 return False
             with self.lock:
@@ -255,6 +271,11 @@ class Autonomy(threading.Thread):
             self.pid_thread.depth_PID.turn_on()
             self.pid_thread.center_y_PID.turn_off()
         return True
+    #
+    # def check_angle(self):
+    #
+    #
+    #
 
     def hit_object(self):
         # TODO: warunek

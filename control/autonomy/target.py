@@ -30,6 +30,7 @@ class Target:
         self.first_view_time = None
         self.cam = None
         self.finish_flag = False  # Czy koniec targetoww
+        self.angle_flag = False
 
 
 
@@ -86,7 +87,7 @@ class Target:
         if self.priority_list_pointer < 1:
             self.priority_list_pointer += 1  # Zwiększenie priorytetu o 1
             self.first_view_time = None
-            self.position = [420, 150]
+            self.position = [0, 0]
             self.distance.clear()
             self.cam = None
             self.target_flag = False
@@ -98,6 +99,13 @@ class Target:
     """Sprawdzanie czy obiekt jest na drodze"""
     def check_obstacles(self):
         pass # tutaj warunek, że obiekt jest na naszej drodze i trzeba go ominąć, dodanie so self.obstacles_to_avoid
+
+    def check_angle(self):
+        if abs(self.position[0]>200):
+            return True
+        else:
+            return False
+
 
     """Return Obstacles to avoid data"""
     def get_obstacles_to_avoid(self):

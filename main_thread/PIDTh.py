@@ -51,7 +51,7 @@ class PIDThread(threading.Thread):
 
 
         self.printer = Printer()
-        self.plotter = Plotter()
+        #self.plotter = Plotter()
 
     def run(self):
         now = time.time()
@@ -64,7 +64,7 @@ class PIDThread(threading.Thread):
             #print("{} {} {} {]".format(roll, pitch, yaw,  depth))
 
 
-            self.plotter.plot(depth)
+            #self.plotter.plot(depth)
 
 
             # print(yaw)
