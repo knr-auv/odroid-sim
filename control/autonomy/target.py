@@ -4,61 +4,78 @@ import time
 class Target:
     """Class that represent current target object that will be our destiny"""
     def __init__(self):
-        # Na razie tylko koncepcja klasy Celu z listą priorytetów która wybiera cel do którego mamy jechać
-        self.priority_list = [b'GATE', b'STRING']  # Lista priorytetów
-        self.priority_list_pointer = 0  # Która lista priorytetów jest wybrana
-        self.last_time = time.time()  # Czas kiedy cel był osatnio widziany
-        self.max_time = 1000  # Maksymalny czas bez wykrycia celu
-        self.obstacle = []  # Lista przeszkód widzianych przez kamere
+        # Na razie tylko koncepcja klasy Celu z listą priorytetow ktora wybiera cel do ktorego mamy jechac
+        self.priority_list = [b'GATE', b'STRING']  # Lista priorytetow
+        self.priority_list_pointer = 0  # Ktora lista priorytetów jest wybrana
+        self.last_time = time.time()  # Czas kiedy cel byl osatnio widziany
+        self.max_time = 1 # Maksymalny czas bez wykrycia celu
+        self.obstacle = []  # Lista przeszkod widzianych przez kamere
         self.obstacle_to_avoid = []
+
+        # POZYCJA
         self.position = [0, 0]
         self.distance = []
         self.last_seen_position = []
         self.last_seen_distance = []
+
+        # WYPELNIENIE EKRANU
+        self.fill_level = 0
+
+
+        # FLAGI
+        self.obstacle_flag = False
         self.target_flag = False
-        self.prev_target_flag = False
-        self.lost_target_flag = False  # Czy zgubił target - jeżeli False to znaczy, że jeszcze nie znalazł
+        self.prev_target_flag = False # Teraz nie widzi targetu ale poprzednio widzial
+        self.lost_target_flag = False  # Czy zgubil target - jezeli False to znaczy, ze jeszcze nie zgubil
         self.first_view_time = None
         self.cam = None
-        self.finish_flag = False  # Czy koniec targetów
+        self.finish_flag = False  # Czy koniec targetoww
+
+
 
     def update_target_position(self, objects_detected_frame):
         self.prev_target_flag = self.target_flag
-        self.target_flag = False
-        self.lost_target_flag = False
+        # self.lost_target_flag = False
+        tmp_flag = False
 
         self.obstacle.clear()
         if len(objects_detected_frame) >= 2:
             for obj in objects_detected_frame[0]:
                 if obj[4][0] == self.priority_list[self.priority_list_pointer]:
-                    self.position = obj[1:]
-                    self.target_flag = True
+                    self.position = obj[1:3]
+                    self.fill_level = obj[3]
+                    tmp_flag = True
                     self.cam = 0
                     if self.first_view_time is None:
                         self.first_view_time = time.time()
                 else:
                     self.obstacle.append(obj)
+                    self.obstacle_flag = True
             for obj in objects_detected_frame[1]:
-                if obj[0] == self.priority_list[self.priority_list_pointer]:
-                    self.target_flag = True
+                if obj[4][0] == self.priority_list[self.priority_list_pointer]:
+                    self.position = obj[1:3]
+                    self.fill_level = obj[3]
+                    tmp_flag = True
                     self.cam = 1
                     if self.first_view_time is None:
                         self.first_view_time = time.time()
                 else:
                     self.obstacle.append(obj)
-        if self.target_flag:
-            # jeżeli widzi target i ostatnio widział, to uaktualnij poprzednio widzianą pozycje
+                    self.obstacle_flag = True
+
+        if tmp_flag:
+            # jezeli widzi target i ostatnio widzial, to uaktualnij poprzednio widziana pozycje
             if self.prev_target_flag:
                 self.last_seen_position = self.position
             self.last_time = time.time()
             self.target_flag = True
         else:
-            # jeżeli nie widzi targetu, ale ostatnio widział to ustaw flagę
+            # jezeli nie widzi targetu, ale ostatnio widzial to ustaw flage
             if self.prev_target_flag:
                 self.lost_target_flag = True
             # jezeli przekroczyl max czas bycia zgubionym to zmien target -> nastepne zadanie
             if (time.time() - self.last_time) > self.max_time:
-                self.change_target()
+                self.target_flag = False
         self.check_obstacles()
 
     """Return
@@ -69,7 +86,7 @@ class Target:
         if self.priority_list_pointer < 1:
             self.priority_list_pointer += 1  # Zwiększenie priorytetu o 1
             self.first_view_time = None
-            self.position.clear()
+            self.position = [420, 150]
             self.distance.clear()
             self.cam = None
             self.target_flag = False
@@ -113,4 +130,7 @@ class Target:
     def get_flag(self):
         return self.target_flag
 
+    """Return Target fill_level"""
+    def get_fill_level(self):
+        return self.fill_level
 

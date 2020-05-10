@@ -1,6 +1,8 @@
 import socket
 from time import sleep
 import pickle
+
+
 class Server:
 	def __init__(self, ip, port):	#konstruktor tworzy socket oraz łączy i testuje połączenie z serverem
 		self.server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -12,8 +14,9 @@ class Server:
 		self.client, addr = self.server.accept()
 		msg ='Connection succesful'
 		self.client.send(pickle.dumps(msg))
-					
-				
+
+	def __del__(self):
+		self.server.close()
 	
 	def receiveData(self): 	#metoda, którą odpalimy w wątku i będzie odbierać napływające dane z jetsona
 		data = self.client.recv(4096)
