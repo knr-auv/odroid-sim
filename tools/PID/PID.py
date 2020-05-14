@@ -1,4 +1,4 @@
-import time
+import time, threading
 
 
 class PID:
@@ -8,7 +8,7 @@ class PID:
         self.Kp = P
         self.Ki = I
         self.Kd = D
-
+        self.lock = threading.Lock()
         self.memory = [self.Kp, self.Ki, self.Kd]
 
         self.set_point = set_point
@@ -55,7 +55,7 @@ class PID:
             #save last data for next calculation
             self.last_time = self.current_time
             self.last_error = error
-
+            
             self.output = self.Kp * self.PTerm + self.Ki * self.ITerm + self.Kd * self.DTerm
 
             # na testy, zeby predkosc sie nie zwiekszyla za bardzo
@@ -89,7 +89,7 @@ class PID:
         print(Kp, Ki, Kd)
 
     def getPIDCoefficients(self):
-        return self.Kp, self.Ki, self.Kd
+        return [self.Kp, self.Ki, self.Kd]
 
     def setMaxOutput(self, max_output):
         self.max_output = max_output

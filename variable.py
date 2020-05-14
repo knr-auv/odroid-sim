@@ -9,7 +9,7 @@ CSV_FLAG = False
 
 IP_ADDRESS_2 = '10.42.0.42'  # address jetson
 IP_ADDRESS_1 = '10.42.0.42'  # address odroid
-
+GUI_ADDRES = ('localhost',8080)
 PAD_PORT = 8186
 JETSON_PORT = 8787
 

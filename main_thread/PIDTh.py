@@ -1,11 +1,12 @@
 import threading
-import time
+import logging
+import time, random
 from tools.PID import PID
 from tools.motor import get_motor_controller
 from tools.Integrator import Integrator
 from tools.printer.printer import Printer
 from tools.plotter.plotter import Plotter
-from variable import motors_speed_diff_pid, motors_speed_pad, PAD_STEERING_FLAG, READ_FLAG, RUN_FORWARD_VALUE
+from variable import motors_speed_diff_pid, motors_speed_pad, PAD_STEERING_FLAG, READ_FLAG, RUN_FORWARD_VALUE, motors_speed
 
 
 class PIDThread(threading.Thread):
@@ -25,11 +26,14 @@ class PIDThread(threading.Thread):
         self.yaw_PID = PID()
         self.velocity_PID = PID()
         self.depth_PID = PID()
+        #gui stuff
+        self.active = True
+        self.isActive = False
+        self.m = [0,0,0,0,0]
         # TODO: depth_PID object and things related to it
 
         self.center_x_PID = PID()
         self.center_x_diff = 0
-
         self.integrator = Integrator()
         # global motors_speed_diff_pid, motors_speed_pad
         global motors_speed_pad
@@ -51,16 +55,17 @@ class PIDThread(threading.Thread):
 
         self.printer = Printer()
         # self.plotter = Plotter()
-
-    def run(self):
-        now = time.time()
-        while True:
+    
+    def run(self): 
+        
+        while self.active:
+            now = time.time_ns()
             self.position_sensor.catch_samples()
             roll = self.position_sensor.get_sample('roll')
             pitch = self.position_sensor.get_sample('pitch')
             yaw = self.position_sensor.get_sample('yaw')
             depth = self.position_sensor.get_sample('depth')
-            #print("{} {} {} {]".format(roll, pitch, yaw,  depth))
+            #print("{} {} {} {}]".format(roll, pitch, yaw,  depth))
             # self.plotter.plot(yaw)
             # print(yaw)
             self.roll_diff = self.roll_PID.update(roll)
@@ -73,23 +78,30 @@ class PIDThread(threading.Thread):
             # print(self.roll_diff)
             # print(self.pitch_diff)
             # print(self.yaw_diff)
-            self.roll_control()
-            self.pitch_control()
-            self.yaw_control()
-            self.pad_control()
-            self.center_x_control()
-            self.depth_control()
-
+            with self.lock:
+                #self.roll_control()
+                #self.pitch_control()
+                #self.yaw_control()
+                self.pad_control()
+                #self.center_x_control()
+                #self.depth_control()
+                self.update_motors()
             self.printer.set_roll(roll)
             self.printer.set_pitch(pitch)
             self.printer.set_yaw(yaw)
             # self.velocity_control()
-
-            self.update_motors()
             self.printer.print_out()
-            # print(time.time()-now)
-            now = time.time()
-            time.sleep(0.1)
+            
+            #czemu to zatrzymuje aplikacje
+            #if (time.time()-now)>self.interval:
+            #    logging.debug("PID loop took 2 long")
+            #while (time.time()-now)<self.interval:
+            #    pass
+            # a to nie
+            time.sleep(self.interval)
+        self.active = True
+        self.isActive = False
+
 
     def roll_control(self):
         self.pid_motors_speeds_update[4] -= self.roll_diff
@@ -129,8 +141,13 @@ class PIDThread(threading.Thread):
     # you can pass velocity to pid_motors_speeds_update in cose to set the velocity on motors without PID controller
     # turned on
     def update_motors(self):
+       # data =[]
+       # for i in range(5):
+            #data.append(random.randint(-1000,1000))
         # print(self.pid_motors_speeds_update)
+        self.m =self.pid_motors_speeds_update
         motors = self.motors.run_motors(self.pid_motors_speeds_update)
+        
         self.printer.set_motors_value(motors)
         # print(motors)
         # motors_speed_diff_pid[:] = self.pid_motors_speeds_update[:]
@@ -143,3 +160,42 @@ class PIDThread(threading.Thread):
 
     def set_position_sensor(self, pos):
         self.position_sensor = pos
+
+
+#GUI methods
+    def getIMU(self):
+        roll = self.position_sensor.get_sample('roll')
+        pitch = self.position_sensor.get_sample('pitch')
+        yaw = self.position_sensor.get_sample('yaw')
+        depth = self.position_sensor.get_sample('depth')
+        return [roll,pitch,yaw,depth]
+
+    def getMotors(self):
+        def map(input,in_min,in_max,out_min,out_max):
+            return int((input-in_min)*(out_max-out_min)/(in_max-in_min)+out_min)
+        ret=[]
+        for i in self.m:
+            ret.append(map(i, -1000,1000,0,100))
+        return ret
+
+    def setPIDs(self, arg):
+        if arg[0] == 'roll':
+            self.roll_PID.setPIDCoefficients(arg[1],arg[2],arg[3])
+        elif arg[0] == 'pitch':
+            self.pitch_PID.setPIDCoefficients(arg[1],arg[2],arg[3])
+        elif arg[0] == 'yaw':
+            self.yaw_PID.setPIDCoefficients(arg[1],arg[2],arg[3])
+        elif arg[0] == 'all':
+            self.roll_PID.setPIDCoefficients(arg[1],arg[2],arg[3])
+            self.pitch_PID.setPIDCoefficients(arg[4],arg[5],arg[5])
+            self.yaw_PID.setPIDCoefficients(arg[7],arg[8],arg[9])
+
+    def getPIDs(self,arg):
+        if arg=='roll':
+            return [arg]+self.roll_PID.getPIDCoefficients()
+        elif arg == 'pitch':
+            return [arg]+self.pitch_PID.getPIDCoefficients()
+        elif arg == 'yaw':
+            return [arg]+self.yaw_PID.getPIDCoefficients()
+        elif arg == 'all':
+            return [arg]+self.roll_PID.getPIDCoefficients()+self.pitch_PID.getPIDCoefficients()+self.yaw_PID.getPIDCoefficients()

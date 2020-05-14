@@ -4,9 +4,10 @@ from .ui.UiTh import UIThread
 from .test.test import TestThread
 from .key.KeyTh import KeySteeringThread
 from .autonomy.autonomy import Autonomy
-
+from .GUI.GUIServer import connectionHandler
 
 controls = {
+    "GUI": connectionHandler,
     "pad": PadSteeringThread,
     "read": ReadSteeringThread,
     "ui": UIThread,

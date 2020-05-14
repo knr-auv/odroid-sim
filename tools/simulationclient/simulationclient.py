@@ -29,10 +29,10 @@ class SimulationClient:
         self.socket.send(b"\xA0"+lenght)
         self.socket.sendall(serialized)
         #print(serialized)
-        confirm = self.socket.recv(1)
-        lenght = self.socket.recv(4)
-        lenght = unpack('<I', lenght)[0]
-        self.ack += self.socket.recv(lenght)
+        #confirm = self.socket.recv(1)
+        #lenght = self.socket.recv(4)
+        #lenght = unpack('<I', lenght)[0]
+        #self.ack += self.socket.recv(lenght)
 
     def get_pos(self):
         self.data = b""
