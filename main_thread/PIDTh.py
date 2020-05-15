@@ -26,10 +26,12 @@ class PIDThread(threading.Thread):
         self.yaw_PID = PID()
         self.velocity_PID = PID()
         self.depth_PID = PID()
+
         #gui stuff
         self.active = True
         self.isActive = False
         self.m = [0,0,0,0,0]
+        
         # TODO: depth_PID object and things related to it
 
         self.center_x_PID = PID()
@@ -39,8 +41,8 @@ class PIDThread(threading.Thread):
         global motors_speed_pad
         self.position_sensor = None
         self.roll_diff, self.pitch_diff, self.yaw_diff, self.velocity_diff, self.depth_diff = 0, 0, 0, 0, 0
-
-        max_sum_output = 900.
+        
+        max_sum_output = 18000.
         self.roll_PID.setMaxOutput(max_sum_output / 4)
         self.pitch_PID.setMaxOutput(max_sum_output / 4)
         self.yaw_PID.setMaxOutput(max_sum_output / 4)
@@ -57,7 +59,7 @@ class PIDThread(threading.Thread):
         # self.plotter = Plotter()
     
     def run(self): 
-        
+        self.isActive=True
         while self.active:
             now = time.time_ns()
             self.position_sensor.catch_samples()
@@ -68,6 +70,8 @@ class PIDThread(threading.Thread):
             #print("{} {} {} {}]".format(roll, pitch, yaw,  depth))
             # self.plotter.plot(yaw)
             # print(yaw)
+            #print(roll)
+
             self.roll_diff = self.roll_PID.update(roll)
             self.pitch_diff = self.pitch_PID.update(pitch)
             self.yaw_diff = self.yaw_PID.update(yaw)  # maybe try:  'gyro_raw_x' 'gro_proc_x'
@@ -75,13 +79,14 @@ class PIDThread(threading.Thread):
             # self.velocity_diff = self.velocity_PID.update(self.IMU.get_sample('vel_x'))
 
             # prints for testing reasons
-            # print(self.roll_diff)
+            #print(self.roll_PID.last_error)
             # print(self.pitch_diff)
             # print(self.yaw_diff)
+            
             with self.lock:
-                #self.roll_control()
-                #self.pitch_control()
-                #self.yaw_control()
+                self.roll_control()
+                self.pitch_control()
+                self.yaw_control()
                 self.pad_control()
                 #self.center_x_control()
                 #self.depth_control()
@@ -92,24 +97,20 @@ class PIDThread(threading.Thread):
             # self.velocity_control()
             self.printer.print_out()
             
-            #czemu to zatrzymuje aplikacje
-            #if (time.time()-now)>self.interval:
-            #    logging.debug("PID loop took 2 long")
-            #while (time.time()-now)<self.interval:
-            #    pass
-            # a to nie
-            time.sleep(self.interval)
+            time.sleep(0.001)
         self.active = True
         self.isActive = False
 
 
     def roll_control(self):
-        self.pid_motors_speeds_update[4] -= self.roll_diff
-        self.pid_motors_speeds_update[2] += self.roll_diff
+        #exactly like in pitch...
+        self.pid_motors_speeds_update[4] += self.roll_diff
+        self.pid_motors_speeds_update[2] -= self.roll_diff
 
     def pitch_control(self):
-        self.pid_motors_speeds_update[2] += self.pitch_diff  # * 2 / 3
-        self.pid_motors_speeds_update[4] += self.pitch_diff  # * 2 / 3
+        #since motors 3 and 4 are inverted in simulaton motor controler '+,+,-' is vertical control...
+        self.pid_motors_speeds_update[2] -= self.pitch_diff  # * 2 / 3
+        self.pid_motors_speeds_update[4] -= self.pitch_diff  # * 2 / 3
         self.pid_motors_speeds_update[3] -= self.pitch_diff
 
     def yaw_control(self):
