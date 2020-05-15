@@ -5,6 +5,7 @@ class sender:
     def __init__(self,protocol):
         self.proto = protocol["TO_GUI"]
         self.pid_spec = protocol["PID_SPEC"]
+        self.control_spec = protocol["CONTROL_SPEC"]
     def send(self):
         pass
     def send_msg(self, msg):
@@ -54,6 +55,18 @@ class sender:
         tx_buffer = struct.pack('<B4f', *(tx_buffer))
         self.send_msg(tx_buffer)
 
+    def sendControl(self, msg):
+
+        if msg[0] == self.control_spec['ARMED']:
+            
+            tx_buffer = [self.proto["CONTROL"]]+msg
+            tx_buffer = struct.pack('<2B',*(tx_buffer))
+            self.send_msg(tx_buffer)
+
+        if msg[0] == self.control_spec['DISARMED']:
+            tx_buffer = [self.proto["CONTROL"]]+msg
+            tx_buffer = struct.pack('<2B',*(tx_buffer))
+            self.send_msg(tx_buffer)
 class parser:
 
     def parse(self, data):
@@ -62,7 +75,8 @@ class parser:
         control_spec = self.protocol["CONTROL_SPEC"]
 
         if data[0] == proto["PID"]:
-            if data[1]!= ALL:
+
+            if data[1]!= pid_spec["all"]:
                 msg = struct.unpack('<2B3f', data)
                 msg = list(msg)
                 msg.pop(0)
@@ -104,7 +118,9 @@ class parser:
                 msg = struct.unpack('<2BI',data)
                 msg = list(msg)
                 self.start_PIDthread(msg[2])
+
             if (data[1]==control_spec["STOP_PID"]):
+                print("STOPING PID THREAD")
                 self.stop_PIDthread()
 
         if(data[0]==proto["BOAT_DATA_REQUEST"]):
@@ -124,8 +140,8 @@ class connectionHandler(threading.Thread, sender,parser):
             self.protocol = json.load(fd)
         sender.__init__(self,self.protocol)
         self.lock = threading.Lock()
-        
-        self.executor = ThreadPoolExecutor(max_workers=10)
+        #4 is enought even with working autonomy...
+        self.executor = ThreadPoolExecutor(max_workers=4)
         self.config = config
         self.pidThread = pidThread
         addr = GUI_ADDRES
@@ -148,20 +164,20 @@ class connectionHandler(threading.Thread, sender,parser):
     def control_motors(self, arg):
         global motors_speed_pad
         #it would be wise to use momentum of motors 2,3,4 to rotate
-
+        #vertical should be splitted on motors according to distance from center of mass
         roll_offset = arg[0]
         pitch_offset= arg[1]
         yaw = arg[2]
-        vertical = arg[3]*0.4
+        vertical = arg[3]
         throttle = arg[4]
         motors_speed_pad[0] = yaw+throttle
         motors_speed_pad[1]=throttle-yaw
-        motors_speed_pad[2]=vertical
-        #why this motor is reversed?
-        motors_speed_pad[3]=-vertical
-        motors_speed_pad[4]=vertical
-        self.pid_thread.roll_PID.setSetPoint(roll_offset)
-        self.pid_thread.pitch_PID.setSetPoint(pitch_offset)
+        motors_speed_pad[2]=-vertical
+        motors_speed_pad[3]=vertical*2/3
+        motors_speed_pad[4]= -vertical
+        #self.pidThread.fancy_setpoints[roll_offset,pitch_offset]
+        self.pidThread.roll_PID.setSetPoint(roll_offset)
+        self.pidThread.pitch_PID.setSetPoint(pitch_offset)
 
     def methodCollector(self, getPIDs, setPIDs, getMotors, getIMU): #getDepth, getHummidity...
         self.getPIDs = getPIDs
@@ -184,12 +200,18 @@ class connectionHandler(threading.Thread, sender,parser):
         self.run()
     
     def start_PIDthread(self, arg):
+        if self.pidThread.isActive == True:
+            return
         with self.lock:
             self.pidThread.interval = arg/1000
         if self.pidThread.isActive == False:
             self.executor.submit(self.pidThread.run)
+            self.sendControl([self.protocol["CONTROL_SPEC"]["ARMED"]])
+
     def stop_PIDthread(self):
+        self.sendControl([self.protocol["CONTROL_SPEC"]["DISARMED"]])
         self.pidThread.active=False
+
     async def loop(self):
         if self.clientConnected:
             self.sendingActive = True           
