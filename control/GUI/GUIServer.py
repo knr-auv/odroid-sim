@@ -120,7 +120,6 @@ class parser:
                 self.start_PIDthread(msg[2])
 
             if (data[1]==control_spec["STOP_PID"]):
-                print("STOPING PID THREAD")
                 self.stop_PIDthread()
 
         if(data[0]==proto["BOAT_DATA_REQUEST"]):

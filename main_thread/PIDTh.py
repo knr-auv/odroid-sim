@@ -59,6 +59,7 @@ class PIDThread(threading.Thread):
         # self.plotter = Plotter()
     
     def run(self): 
+        logging.debug("STARTING PID THREAD")
         self.isActive=True
         while self.active:
             now = time.time_ns()
@@ -98,6 +99,7 @@ class PIDThread(threading.Thread):
             self.printer.print_out()
             
             time.sleep(0.001)
+        logging.debug("STOPING PID THREAD")
         self.active = True
         self.isActive = False
 
