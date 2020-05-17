@@ -33,7 +33,7 @@ class PIDThread(threading.Thread):
         self.m = [0,0,0,0,0]
         
         # TODO: depth_PID object and things related to it
-
+        self.interval = 0.01
         self.center_x_PID = PID()
         self.center_x_diff = 0
         self.integrator = Integrator()
@@ -61,8 +61,9 @@ class PIDThread(threading.Thread):
     def run(self): 
         logging.debug("STARTING PID THREAD")
         self.isActive=True
+        
         while self.active:
-            now = time.time_ns()
+            now = time.time()
             self.position_sensor.catch_samples()
             roll = self.position_sensor.get_sample('roll')
             pitch = self.position_sensor.get_sample('pitch')
@@ -83,7 +84,6 @@ class PIDThread(threading.Thread):
             #print(self.roll_PID.last_error)
             # print(self.pitch_diff)
             # print(self.yaw_diff)
-            
             with self.lock:
                 self.roll_control()
                 self.pitch_control()
@@ -97,8 +97,9 @@ class PIDThread(threading.Thread):
             self.printer.set_yaw(yaw)
             # self.velocity_control()
             self.printer.print_out()
-            
-            time.sleep(0.001)
+            if(time.time()-now>self.interval):
+                logging.debug("PID loop timeout")
+            time.sleep(self.interval-time.time()+now)
         logging.debug("STOPING PID THREAD")
         self.active = True
         self.isActive = False
