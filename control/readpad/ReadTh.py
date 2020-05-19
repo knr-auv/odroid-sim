@@ -17,8 +17,8 @@ class ReadSteeringThread(threading.Thread):
                                                config.get_pid("roll", "D")) # zahardkodowane narazie # nastawy  z testow
         pid_thread.pitch_PID.setPIDCoefficients(config.get_pid("pitch", "P"), config.get_pid("pitch", "I"),
                                                 config.get_pid("pitch", "D"))
-        pid_thread.yaw_PID.setPIDCoefficients(config.get_pid("yaw", "P"), config.get_pid("pitch", "I"),
-                                              config.get_pid("pitch", "P")) # zera, bo horyzontalnymi silnikami sterujemy tylko plikiem
+        pid_thread.yaw_PID.setPIDCoefficients(config.get_pid("yaw", "P"), config.get_pid("yaw", "I"),
+                                              config.get_pid("yaw", "D")) # zera, bo horyzontalnymi silnikami sterujemy tylko plikiem
 
     def run(self):
         global motors_speed, run_flag, motors_speed_pad

@@ -204,10 +204,12 @@ class connectionHandler(threading.Thread, sender,parser):
         with self.lock:
             self.pidThread.interval = arg/1000
         if self.pidThread.isActive == False:
+            self.pidThread.active = True
             self.executor.submit(self.pidThread.run)
             self.sendControl([self.protocol["CONTROL_SPEC"]["ARMED"]])
 
     def stop_PIDthread(self):
+
         self.sendControl([self.protocol["CONTROL_SPEC"]["DISARMED"]])
         self.pidThread.active=False
 

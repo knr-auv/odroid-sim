@@ -101,10 +101,13 @@ class PIDThread(threading.Thread):
                 logging.debug("PID loop timeout")
             time.sleep(self.interval-time.time()+now)
         logging.debug("STOPING PID THREAD")
-        self.active = True
-        self.isActive = False
+        with self.lock:
+            self.disable_motors()
+            self.active = True
+            self.isActive = False
 
-
+    def disable_motors(self):
+        self.motors.run_motors([0,0,0,0,0])
     def roll_control(self):
         #exactly like in pitch...
         self.pid_motors_speeds_update[4] += self.roll_diff
@@ -191,7 +194,7 @@ class PIDThread(threading.Thread):
             self.yaw_PID.setPIDCoefficients(arg[1],arg[2],arg[3])
         elif arg[0] == 'all':
             self.roll_PID.setPIDCoefficients(arg[1],arg[2],arg[3])
-            self.pitch_PID.setPIDCoefficients(arg[4],arg[5],arg[5])
+            self.pitch_PID.setPIDCoefficients(arg[4],arg[5],arg[6])
             self.yaw_PID.setPIDCoefficients(arg[7],arg[8],arg[9])
 
     def getPIDs(self,arg):
