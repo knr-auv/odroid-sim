@@ -53,7 +53,7 @@ class PIDThread(threading.Thread):
 
         self.motors = get_motor_controller(config)
         self.motors.initialize_all()
-
+        self.imu_data = [0,0,0,0]
 
         self.printer = Printer()
         # self.plotter = Plotter()
@@ -69,6 +69,7 @@ class PIDThread(threading.Thread):
             pitch = self.position_sensor.get_sample('pitch')
             yaw = self.position_sensor.get_sample('yaw')
             depth = self.position_sensor.get_sample('depth')
+            self.imu_data = [roll, pitch,yaw,depth]
             #print("{} {} {} {}]".format(roll, pitch, yaw,  depth))
             # self.plotter.plot(yaw)
             # print(yaw)
@@ -99,7 +100,8 @@ class PIDThread(threading.Thread):
             self.printer.print_out()
             if(time.time()-now>self.interval):
                 logging.debug("PID loop timeout")
-            time.sleep(self.interval-time.time()+now)
+            else:
+                time.sleep((self.interval-time.time()+now))
         logging.debug("STOPING PID THREAD")
         with self.lock:
             self.disable_motors()
@@ -171,11 +173,7 @@ class PIDThread(threading.Thread):
 
 #GUI methods
     def getIMU(self):
-        roll = self.position_sensor.get_sample('roll')
-        pitch = self.position_sensor.get_sample('pitch')
-        yaw = self.position_sensor.get_sample('yaw')
-        depth = self.position_sensor.get_sample('depth')
-        return [roll,pitch,yaw,depth]
+        return self.imu_data
 
     def getMotors(self):
         def map(input,in_min,in_max,out_min,out_max):
